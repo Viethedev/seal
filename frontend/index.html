@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SEAL — Sun–Earth Analysis for Landing</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="demo-data.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo" aria-hidden="true">◐</span> SEAL <small>Sun–Earth Analysis for Landing</small></div>
+    <span id="mode-badge" class="badge" hidden>Demo data · flat horizon</span>
+  </header>
+
+  <!-- 1. Home: choose region / site -->
+  <section id="home" class="page">
+    <div class="hero">
+      <h1>Where — and when — can a lander keep its power and its link home?</h1>
+      <p>Pick a candidate landing site near the lunar south pole. SEAL shows when the Sun lights it and when Earth is in view, so planners can compare sites and dates fast.</p>
+    </div>
+    <div class="choose">
+      <div class="card">
+        <h2>Preset sites <span class="tag">Artemis III regions</span></h2>
+        <ul id="preset-list" class="preset-list"></ul>
+      </div>
+      <div class="card muted">
+        <h2>Custom location <span class="tag soon">coming soon</span></h2>
+        <label>Latitude (°) <input type="number" step="0.0001" placeholder="-85.0" disabled></label>
+        <label>Longitude (° E) <input type="number" step="0.0001" placeholder="30.0" disabled></label>
+        <p class="hint">Or pick a point on the map — available after the demo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Main interface: map + query -->
+  <section id="main" class="page" hidden>
+    <button id="back" class="link">← Change site</button>
+    <div class="layout">
+      <div class="card map-card">
+        <h2>South polar map <small>80°–90°S</small></h2>
+        <svg id="map" viewBox="0 0 400 400" role="img" aria-label="South polar map with candidate sites"></svg>
+        <p class="hint">Click a marker to select it. Shift-click to add it to Compare.</p>
+      </div>
+
+      <div class="card query-card">
+        <div class="tabs" role="tablist">
+          <button role="tab" id="tab-compute" class="tab active" aria-selected="true">Compute</button>
+          <button role="tab" id="tab-compare" class="tab" aria-selected="false">Compare</button>
+        </div>
+
+        <div class="selected">
+          <span>Site(s):</span> <span id="selected-names"></span>
+        </div>
+
+        <div class="inputs">
+          <label>Start (UTC) <input id="start" type="datetime-local"></label>
+          <label>End (UTC) <input id="end" type="datetime-local"></label>
+          <label>Step <select id="step"><option value="60">1 h</option><option value="360" selected>6 h</option><option value="720">12 h</option></select></label>
+          <label>Lander height (m) <input id="height" type="number" value="2" min="0" step="0.5"></label>
+        </div>
+
+        <div class="actions">
+          <button id="run" class="primary">Compute</button>
+          <button id="export" class="secondary" disabled>Export CSV</button>
+        </div>
+        <p id="status" class="hint" role="status"></p>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="results" hidden>
+      <div id="summary" class="summary"></div>
+      <div class="card">
+        <h2 id="chart-title">Visibility over time</h2>
+        <div class="chart-wrap"><canvas id="chart"></canvas></div>
+      </div>
+      <div class="card" id="csv-card" hidden>
+        <h2>CSV export <button id="copy-csv" class="secondary small">Copy</button></h2>
+        <textarea id="csv-out" rows="8" readonly></textarea>
+      </div>
+      <div class="card" id="elev-card">
+        <h2>Sun &amp; Earth elevation vs horizon</h2>
+        <div class="chart-wrap"><canvas id="chart-elev"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    Data: NASA JPL Horizons · LRO LOLA (NASA PGDA) · Quickmap / Moon Trek · NASA Space Apps 2026
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

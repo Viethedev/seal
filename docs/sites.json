@@ -56,24 +56,24 @@
   },
   {
     "id": "de-gerlache-rim-2",
-    "name": "de Gerlache Rim 2 (approx.)",
+    "name": "de Gerlache Rim 2",
     "region": "de Gerlache Rim 2",
-    "lat": -88.161,
-    "lon": -54.064,
-    "point_type": "TODO: placeholder (nearby shadowed-crater centre) — replace with a point picked in Quickmap",
+    "lat": -88.32833,
+    "lon": -69.89572,
+    "point_type": "point picked inside the Artemis III region (Quickmap, LROC/ASU)",
     "validated": false,
     "note": "Artemis III candidate region closest to the pole.",
-    "source": "https://iopscience.iop.org/article/10.3847/PSJ/ad1b50"
+    "source": "https://quickmap.lroc.asu.edu (Artemis III candidate regions layer)"
   },
   {
     "id": "malapert-massif",
-    "name": "Malapert Massif (approx.)",
+    "name": "Malapert Massif",
     "region": "Malapert Massif",
-    "lat": -84.9,
-    "lon": 12.9,
-    "point_type": "TODO: placeholder (crater centre) — replace with a massif point picked in Quickmap",
+    "lat": -85.89263,
+    "lon": 1.23645,
+    "point_type": "point picked inside the Artemis III region (Quickmap, LROC/ASU)",
     "validated": false,
     "note": "Artemis III candidate region; good Earth visibility.",
-    "source": "https://en.wikipedia.org/wiki/Malapert_(crater)"
+    "source": "https://quickmap.lroc.asu.edu (Artemis III candidate regions layer)"
   }
 ]
