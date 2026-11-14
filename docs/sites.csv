@@ -1,0 +1,11 @@
+name,lat,lon,point_type,why_it_matters,in_80S_LOLA_COG,source
+IM-2 Athena (Mons Mouton),-84.7906,29.1957,Exact landing point,Southernmost landing so far; mission ended at local sunset - real benchmark for SEAL,Yes,https://lroc.im-ldi.com/images/1408
+Mons Mouton (summit/plateau),-84.6,31.0,Feature centre (IAU),Artemis III candidate region (Mons Mouton / Mons Mouton Plateau); future IM-4 and VIPER-type target,Yes,https://en.wikipedia.org/wiki/Mons_Mouton (IAU Gazetteer value)
+Nobile Rim 1 (example site),-85.45638,36.36065,Example point inside region (paper),Artemis III candidate region,Yes,https://www.researchgate.net/publication/396714246
+Nobile Rim 2 (optimal site from study),-84.20156,60.69989,Example point inside region (paper),Artemis III candidate region; rated best site in a multi-criteria study,Yes,https://www.sciencedirect.com/science/article/pii/S0094576524006234
+Haworth (example site),-86.72621,-21.63869,Example point inside region (paper; 338.36131E converted),Artemis III candidate region; next to one of the coldest shadowed craters,Yes,https://www.researchgate.net/publication/396714246
+de Gerlache Rim 2 (reference point),-88.161,-54.064,Shadowed-crater centre near region (305.936E converted) - NOT a landing point; pick exact point in Quickmap,Artemis III candidate region closest to the pole (~50 km),Yes,https://iopscience.iop.org/article/10.3847/PSJ/ad1b50
+Malapert (reference point),-84.9,12.9,Crater centre - NOT the massif landing point; pick exact point in Quickmap,Artemis III candidate region (Malapert Massif); good Earth visibility,Yes,https://en.wikipedia.org/wiki/Malapert_(crater)
+Chandrayaan-3 Vikram (Statio Shiv Shakti),-69.373,32.319,Exact landing point (IAU-named),India's landing; operated one lunar day until sunset - real benchmark for SEAL,No (needs other terrain or flat mode),https://planetarynames.wr.usgs.gov/Feature/16272
+Blue Ghost Mission 1 (Mare Crisium),18.56,61.81,Landing point (LROC),Operated through the full lunar day into sunset - real benchmark; easy mid-latitude contrast,No (needs other terrain or flat mode),https://www.lroc.asu.edu/images/1400
+Apollo 11 (Tranquility Base),0.6741,23.4730,Exact landing point (well known - verify),Equatorial contrast: simple sunrise/sunset to show why the pole is hard,No (needs other terrain or flat mode),VERIFY: NASA/LROC Apollo 11 page
