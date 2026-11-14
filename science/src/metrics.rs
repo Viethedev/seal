@@ -1,4 +1,4 @@
-//! Step 4 — mission metrics over an evenly spaced time series.
+//! Step 4: mission metrics over an evenly spaced time series.
 
 /// One time step for one site.
 #[derive(Debug, Clone, Copy)]

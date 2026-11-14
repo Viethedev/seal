@@ -1,4 +1,4 @@
-//! Step 1 — horizon mask: the highest terrain elevation angle in every
+//! Step 1: horizon mask: the highest terrain elevation angle in every
 //! azimuth, seen from an observer standing at the site.
 
 use crate::geometry::{local_frame, site_vector, unit_from_latlon, Vec3};

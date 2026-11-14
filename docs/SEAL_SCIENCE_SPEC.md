@@ -1,7 +1,7 @@
-# SEAL – Science Core Spec (v1)
+# SEAL - Science Core Spec (v1)
 
 Owner: Jacob · For: Viethedev (integration) + AI code generation
-Scope: Artemis III candidate regions only (all inside the LOLA 80–90°S tile).
+Scope: Artemis III candidate regions only (all inside the LOLA 80-90°S tile).
 
 ---
 
@@ -35,10 +35,10 @@ Scope: Artemis III candidate regions only (all inside the LOLA 80–90°S tile).
 
 ## 2. Algorithm
 
-### Step 1 – Horizon mask (once per site)
+### Step 1 - Horizon mask (once per site)
 "How high does the land rise in every direction?"
 
-1. Site position S = (R + z_site/1000 + h/1000) × unit vector(lat, lon) — 3D Moon-fixed, km.
+1. Site position S = (R + z_site/1000 + h/1000) × unit vector(lat, lon), 3D Moon-fixed, km.
 2. Local axes at S: up = unit(S); east = unit(Ẑ × up); north = up × east.
 3. For each azimuth a = 0°, 0.5°, … 359.5°:
    - Walk outward along the surface in direction a, from 0.1 km to **150 km**, step ≈ 20 m near the site (can grow to 100 m beyond 10 km).
@@ -47,14 +47,14 @@ Scope: Artemis III candidate regions only (all inside the LOLA 80–90°S tile).
    - mask(a) = max of e over the walk.
 4. Output: `mask[720]` in degrees.
 
-(Using 3D vectors automatically includes the Moon's curvature – no separate correction needed.)
+(Using 3D vectors automatically includes the Moon's curvature - no separate correction needed.)
 
-### Step 2 – Sun & Earth direction in the sky (per time step)
+### Step 2 - Sun & Earth direction in the sky (per time step)
 For body B (Sun or Earth): v = B_pos − S
 - el = asin( dot(unit(v), up) )
-- az = atan2( dot(v, east), dot(v, north) ), wrapped to 0–360°
+- az = atan2( dot(v, east), dot(v, north) ), wrapped to 0-360°
 
-### Step 3 – How much is visible
+### Step 3 - How much is visible
 - Angular radius ρ = asin(R_body / |v|) with R_sun = 696,000 km, R_earth = 6,371 km (≈ 0.27° Sun, ≈ 0.95° Earth).
 - Horizon at that azimuth: H = mask(az) (linear interpolation).
 - x = (el − H) / ρ, clamp to [−1, 1]
@@ -63,7 +63,7 @@ For body B (Sun or Earth): v = B_pos − S
 - Sun lit = f_sun > 0 · Fully lit = f_sun = 1
 - **Earth contact** = f_earth ≥ 0.5 (Earth's centre above the terrain)
 
-### Step 4 – Metrics (over the time series)
+### Step 4 - Metrics (over the time series)
 | Metric | Definition |
 |---|---|
 | Sunlit % | share of time steps with f_sun > 0 |
@@ -75,11 +75,11 @@ For body B (Sun or Earth): v = B_pos − S
 | Next Earthset | first time after t_start where Earth contact true → false |
 | **Usable mission length** | from t_start: min(time to next sunset, time to next Earthset). 0 if Sun or Earth not available at t_start |
 
-### Step 5 – Optional: Windows view (stretch goal)
+### Step 5 - Optional: Windows view (stretch goal)
 For each landing day in a range (e.g. next 90 days, 1-day step): run Step 4 with t_start = that day → usable mission length.
-Colour: green ≥ 10 days · yellow 3–10 days · red < 3 days.
+Colour: green ≥ 10 days · yellow 3-10 days · red < 3 days.
 
-### Step 6 – Optional: power & battery (stretch goal)
+### Step 6 - Optional: power & battery (stretch goal)
 - Vertical panel facing the Sun: P(t) = η·A·1361 W/m² · f_sun · cos(el_sun)
 - Battery needed (Wh) = P_load (W) × longest dark period (h)
 - Defaults (editable, label as assumptions): η·A = 1 m² effective, P_load = 50 W.
@@ -106,7 +106,7 @@ Colour: green ≥ 10 days · yellow 3–10 days · red < 3 days.
 | T4 | Visible fraction formula | x = 1 → 1, x = 0 → 0.5, x = −1 → 0 |
 | T5 | IM-2 Athena site (−84.7906, 29.1957), landed 2025-03-06 | predicted next sunset ≈ the ~10-day planned surface mission (mission planned to end at local sunset) |
 
-Note on T5: Athena tipped over on landing, so its *actual* end was early – compare against the *planned* sunset-limited duration and say so honestly.
+Note on T5: Athena tipped over on landing, so its *actual* end was early - compare against the *planned* sunset-limited duration and say so honestly.
 
 ---
 

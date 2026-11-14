@@ -1,0 +1,11 @@
+{
+  "file": "terrain.bin",
+  "pixel_m": 240.0,
+  "width": 2533,
+  "height": 2533,
+  "x0_m": -303880.0,
+  "y0_m": 303880.0,
+  "x_axis_lon": 90,
+  "y_axis_lon": 0,
+  "nodata": -32768
+}

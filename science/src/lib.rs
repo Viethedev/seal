@@ -1,4 +1,4 @@
-//! SEAL science core — pure functions, no I/O.
+//! SEAL science core, pure functions, no I/O.
 //!
 //! Implements `SEAL_SCIENCE_SPEC.md`:
 //!   Step 1  horizon mask from a terrain model

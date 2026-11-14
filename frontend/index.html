@@ -3,94 +3,144 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SEAL — Sun–Earth Analysis for Landing</title>
+  <title>SEAL: Sun-Earth Analysis for Landing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script src="demo-data.js"></script>
+  <script src="engine.js"></script>
+  <script src="globe.js"></script>
 </head>
-<body>
+<body class="is-landing">
   <header class="topbar">
-    <div class="brand"><span class="logo" aria-hidden="true">◐</span> SEAL <small>Sun–Earth Analysis for Landing</small></div>
-    <span id="mode-badge" class="badge" hidden>Demo data · flat horizon</span>
+    <a class="brand" href="#" id="home-link"><span class="logo" aria-hidden="true"></span>SEAL <small>Sun-Earth Analysis for Landing</small></a>
+    <span id="mode-badge" class="badge" hidden></span>
   </header>
 
-  <!-- 1. Home: choose region / site -->
-  <section id="home" class="page">
-    <div class="hero">
-      <h1>Where — and when — can a lander keep its power and its link home?</h1>
-      <p>Pick a candidate landing site near the lunar south pole. SEAL shows when the Sun lights it and when Earth is in view, so planners can compare sites and dates fast.</p>
-    </div>
-    <div class="choose">
-      <div class="card">
-        <h2>Preset sites <span class="tag">Artemis III regions</span></h2>
-        <ul id="preset-list" class="preset-list"></ul>
-      </div>
-      <div class="card muted">
-        <h2>Custom location <span class="tag soon">coming soon</span></h2>
-        <label>Latitude (°) <input type="number" step="0.0001" placeholder="-85.0" disabled></label>
-        <label>Longitude (° E) <input type="number" step="0.0001" placeholder="30.0" disabled></label>
-        <p class="hint">Or pick a point on the map — available after the demo.</p>
-      </div>
+  <!-- Landing: sits over the live 3D Moon -->
+  <section id="landing" class="landing">
+    <div class="landing-inner">
+      <p class="kicker">NASA Space Apps 2026, Lunar Landing Site Navigator challenge</p>
+      <h1>Sunlight and a line to Earth, at the Moon's south pole.</h1>
+      <p class="lead">Pick a landing site and a date. SEAL follows the Sun and Earth across the polar sky, hour by hour, and shows how long a lander stays powered and in contact.</p>
+      <button id="locate" class="primary big">Locate the place</button>
+      <p id="lead-error" class="status" hidden></p>
+      <p class="sources">Sun and Earth positions from NASA JPL Horizons. Imagery and terrain from NASA's Lunar Reconnaissance Orbiter.</p>
     </div>
   </section>
 
-  <!-- 2. Main interface: map + query -->
-  <section id="main" class="page" hidden>
-    <button id="back" class="link">← Change site</button>
-    <div class="layout">
-      <div class="card map-card">
-        <h2>South polar map <small>80°–90°S</small></h2>
-        <svg id="map" viewBox="0 0 400 400" role="img" aria-label="South polar map with candidate sites"></svg>
-        <p class="hint">Click a marker to select it. Shift-click to add it to Compare.</p>
+  <!-- Explorer -->
+  <section id="explorer" class="explorer">
+    <div class="map-wrap">
+      <div id="map" aria-label="Interactive 3D Moon"></div>
+      <div id="map-loading" class="map-loading" hidden>Loading NASA Moon maps…</div>
+      <div class="map-hud">
+        <div id="cursor" class="hud-box">Drag to rotate · scroll to zoom</div>
+        <div class="hud-box layers"><label style="gap:8px">Lighting<button type="button" class="tip" aria-label="What is this?" data-tip="Sun shadows: dark areas have the Sun below their horizon at the chosen time. Earth visibility: blue where Earth is in view, red where it is hidden.">i</button>
+          <select id="light-mode"><option value="sun" selected>Sun shadows</option><option value="earth">Earth visibility</option><option value="off">off</option></select></label>
+          <div id="light-legend" class="note" hidden></div></div>
+      </div>
+      <button id="reset-view" class="hud-btn" title="Back to the south pole">South pole</button>
+      <div class="map-hint">Click a glowing site, or anywhere on the Moon to drop a pin</div>
+    </div>
+    <div id="splitter" class="splitter" role="separator" aria-label="Drag to resize" tabindex="0"><span></span></div>
+
+    <aside class="panel" id="panel">
+      <!-- Site / point info -->
+      <div id="info" class="info empty">
+
       </div>
 
-      <div class="card query-card">
-        <div class="tabs" role="tablist">
-          <button role="tab" id="tab-compute" class="tab active" aria-selected="true">Compute</button>
-          <button role="tab" id="tab-compare" class="tab" aria-selected="false">Compare</button>
+      <!-- Query -->
+      <div id="query" class="query" hidden>
+        <div class="row">
+          <label><span class="lab">Landing / start (UTC)<button type="button" class="tip" aria-label="What is this?" data-tip="The moment the lander touches down, in UTC (world time, the same as London in winter). The analysis starts here.">i</button></span><input id="start" type="datetime-local"></label>
+          <label><span class="lab">Until (UTC)<button type="button" class="tip" aria-label="What is this?" data-tip="When to stop the analysis. A few weeks shows a full lunar day and night. The data covers 2025 to 2028.">i</button></span><input id="end" type="datetime-local"></label>
         </div>
-
-        <div class="selected">
-          <span>Site(s):</span> <span id="selected-names"></span>
+        <div class="row">
+          <label><span class="lab">Time step<button type="button" class="tip" aria-label="What is this?" data-tip="How often SEAL checks where the Sun and Earth are. 1 hour is the most precise. 6 or 12 hours is faster and fine for an overview.">i</button></span><select id="step"><option value="60">1 hour</option><option value="360" selected>6 hours</option><option value="720">12 hours</option></select></label>
+          <label><span class="lab">Lander height (m)<button type="button" class="tip" aria-label="What is this?" data-tip="How high the solar panels and antenna sit above the ground, in metres. A taller mast can see over small bumps a bit sooner.">i</button></span><input id="height" type="number" value="2" min="0" step="0.5"></label>
         </div>
-
-        <div class="inputs">
-          <label>Start (UTC) <input id="start" type="datetime-local"></label>
-          <label>End (UTC) <input id="end" type="datetime-local"></label>
-          <label>Step <select id="step"><option value="60">1 h</option><option value="360" selected>6 h</option><option value="720">12 h</option></select></label>
-          <label>Lander height (m) <input id="height" type="number" value="2" min="0" step="0.5"></label>
+        <div class="row">
+          <label><span class="lab">Battery (kWh)<button type="button" class="tip" aria-label="What is this?" data-tip="Battery size in kilowatt hours. Leave it at 0 to see solar power only. Add a battery to see whether the lander survives the dark.">i</button></span><input id="battery-kwh" type="number" value="0" min="0" step="1"></label>
+          <label><span class="lab">Night power use (W)<button type="button" class="tip" aria-label="What is this?" data-tip="Power the lander needs to stay alive in the dark, mostly heaters and a radio, in watts. 100 W is a typical guess for a small lander.">i</button></span><input id="night-w" type="number" value="100" min="1" step="10"></label>
         </div>
-
         <div class="actions">
-          <button id="run" class="primary">Compute</button>
-          <button id="export" class="secondary" disabled>Export CSV</button>
+          <span class="btn-tip"><button id="open-cal" class="secondary">Landing calendar</button><button type="button" class="tip" aria-label="What is this?" data-tip="See every possible landing day for this site, coloured by how long the lander would keep working. Click a day to pick it.">i</button></span>
+          <button id="run" class="primary">Analyse</button>
+          <button id="add-compare" class="secondary">+ Compare</button>
         </div>
-        <p id="status" class="hint" role="status"></p>
+        <div id="compare-bar" class="compare-bar" hidden>
+          <span>Compare:</span> <span id="compare-chips"></span>
+          <button id="run-compare" class="secondary small">Compare now</button>
+          <p id="compare-hint" class="compare-hint"></p>
+        </div>
+        <p id="status" class="status" role="status"></p>
       </div>
-    </div>
 
-    <!-- Results -->
-    <div id="results" hidden>
-      <div id="summary" class="summary"></div>
-      <div class="card">
-        <h2 id="chart-title">Visibility over time</h2>
-        <div class="chart-wrap"><canvas id="chart"></canvas></div>
+      <!-- Results -->
+      <div id="results" hidden>
+        <div id="verdict" class="verdict"></div>
+        <div id="summary" class="summary"></div>
+        <div class="chart-card" id="finder-card" hidden>
+          <h3><span class="lab">Landing dates nearby<button type="button" class="tip" aria-label="What is this?" data-tip="Landing days around your chosen date. Green means a long working time, red a short one. Click a day to analyse it.">i</button></span> <span class="muted" style="font-weight:400;font-size:.75rem">15 days before to 75 after, click a day</span></h3>
+          <div id="finder"></div>
+        </div>
+        <div class="chart-card sticky" id="timeline" hidden>
+          <h3><span class="lab">Time machine<button type="button" class="tip" aria-label="What is this?" data-tip="Drag the slider or press Play to move through time. The shadows on the Moon and the two charts below move together.">i</button></span></h3>
+          <div class="tl-row"><button id="tl-play" class="secondary small">▶ Play</button><input id="tl-range" type="range" min="0" max="0" value="0"></div>
+          <p id="tl-read" class="tl-read"></p>
+        </div>
+        <div class="chart-card" id="sky-card">
+          <h3><span class="lab">Sky view from the lander<button type="button" class="tip" aria-label="What is this?" data-tip="What the lander sees if it turns in a full circle. Left to right is the direction (north, east, south, west). Up is height above the horizon.">i</button></span></h3>
+          <div class="chart-wrap"><canvas id="chart-sky"></canvas></div>
+          <p class="muted" style="font-size:.72rem;margin:4px 0 0">Grey = hills on the horizon. Dots = Sun and Earth. A dot inside the grey is hidden.</p>
+        </div>
+        <div class="chart-card" id="elev-card">
+          <h3><span class="lab">Height above the horizon<button type="button" class="tip" aria-label="What is this?" data-tip="How high the Sun and Earth are above the horizon over time. Below the dotted line means hidden: no power from the Sun, no radio with Earth.">i</button></span></h3>
+          <div class="chart-wrap"><canvas id="chart-elev"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3><span class="lab"><span id="chart-title">Sun &amp; Earth visibility</span><button type="button" class="tip" aria-label="What is this?" data-tip="How much of the Sun and Earth is visible at each moment, from 0 to 100 percent.">i</button></span></h3>
+          <div class="chart-wrap"><canvas id="chart"></canvas></div>
+        </div>
+        <div class="actions">
+          <button id="export" class="secondary">Export CSV</button>
+        </div>
+        <div id="csv-card" class="chart-card" hidden>
+          <h3>CSV <button id="copy-csv" class="secondary small">Copy</button></h3>
+          <textarea id="csv-out" rows="6" readonly></textarea>
+        </div>
       </div>
-      <div class="card" id="csv-card" hidden>
-        <h2>CSV export <button id="copy-csv" class="secondary small">Copy</button></h2>
-        <textarea id="csv-out" rows="8" readonly></textarea>
-      </div>
-      <div class="card" id="elev-card">
-        <h2>Sun &amp; Earth elevation vs horizon</h2>
-        <div class="chart-wrap"><canvas id="chart-elev"></canvas></div>
-      </div>
-    </div>
+      <p class="credits">Imagery: LRO WAC mosaics via NASA Moon Trek. Sun and Earth: NASA JPL Horizons. Sites: NASA Artemis III candidate regions.</p>
+    </aside>
   </section>
+
+  <div id="cal-modal" class="modal" hidden>
+    <div class="modal-box" role="dialog" aria-label="Landing calendar">
+      <div class="modal-head">
+        <div><p class="eyebrow" style="margin:0">Pick your landing date</p><h2 id="cal-title"></h2></div>
+        <button id="cal-close" class="icon" aria-label="Close">✕</button>
+      </div>
+      <div class="cal-controls">
+        <label><span class="lab">Battery (kWh)<button type="button" class="tip" aria-label="What is this?" data-tip="Battery size in kilowatt hours. Leave it at 0 to see solar power only. Add a battery to see whether the lander survives the dark.">i</button></span><input id="cal-battery" type="number" value="0" min="0" step="1"></label>
+        <label><span class="lab">Night power use (W)<button type="button" class="tip" aria-label="What is this?" data-tip="Power the lander needs to stay alive in the dark, mostly heaters and a radio, in watts. 100 W is a typical guess for a small lander.">i</button></span><input id="cal-night" type="number" value="100" min="1" step="10"></label>
+        <p id="cal-best" class="cal-best"></p>
+      </div>
+      <div class="cal-nav"><button id="cal-prev" class="icon">‹</button><div id="cal-months" class="cal-months"></div><button id="cal-next" class="icon">›</button></div>
+      <div class="legend cal-legend"><span><i class="g"></i>10+ days</span><span><i class="y"></i>5-10</span><span><i class="o"></i>1-5</span><span><i class="n"></i>no landing (Sun or Earth hidden)</span><span class="muted">Days = how long the lander keeps working if it lands that day</span></div>
+      <div id="cal-detail" class="cal-detail"></div>
+      <div id="cal-trade" class="cal-trade"></div>
+      <div class="actions" style="justify-content:flex-end"><button id="cal-go" class="primary" disabled>Analyse this landing</button></div>
+    </div>
+  </div>
 
   <footer class="foot">
-    Data: NASA JPL Horizons · LRO LOLA (NASA PGDA) · Quickmap / Moon Trek · NASA Space Apps 2026
+    Moon: LRO WAC global + south-pole mosaics via NASA Moon Trek · Ephemeris: NASA JPL Horizons · Sites: NASA Artemis III candidate regions · NASA Space Apps 2026
   </footer>
 
+  <div id="tipbox" class="tipbox" role="tooltip" hidden></div>
   <script src="app.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-# seal_science — SEAL's science core
+# seal_science: SEAL's science core
 
 Pure Rust, no I/O, no dependencies. Implements `docs/SEAL_SCIENCE_SPEC.md`.
 The axum server / data layer feeds it terrain + Sun/Earth positions and gets numbers back.
@@ -34,7 +34,18 @@ let m = metrics(&samples); // Vec<Sample { t, sun_frac, earth_frac }>
 ```
 
 ## Tests
-`cargo test` — includes spec tests T1 (flat-sphere horizon dip), T2 (ring wall), T4 (visible fraction),
+`cargo test`, includes spec tests T1 (flat-sphere horizon dip), T2 (ring wall), T4 (visible fraction),
 plus azimuth/elevation and metrics checks. T3 (vs JPL Horizons) and T5 (IM-2) run once real data is wired in.
 
 AI-assisted (Claude), specified and validated by Siddhant Jacob.
+
+## Rebuilding the Sun and Earth table
+
+`science/ephemeris/build_ephemeris.py` (Python standard library only):
+
+```
+python science/ephemeris/build_ephemeris.py build      # downloads 2025 to 2028 from NASA JPL Horizons, writes ephemeris.json
+python science/ephemeris/build_ephemeris.py validate   # compares the table with fresh Horizons answers for real sites
+```
+
+Copy the new `ephemeris.json` into `frontend/data/`. Spot check (IM-2 site, 6 to 7 March 2025): the table matches fresh Horizons answers to better than 0.000001 deg.

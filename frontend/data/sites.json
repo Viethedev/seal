@@ -1,0 +1,251 @@
+[
+  {
+    "id": "mons-mouton-im2",
+    "name": "IM-2 Athena landing (Mons Mouton)",
+    "region": "Mons Mouton",
+    "lat": -84.7906,
+    "lon": 29.1957,
+    "point_type": "exact landing point",
+    "validated": true,
+    "note": "Real mission benchmark. Tipped over on landing; planned ~10-day mission to local sunset.",
+    "source": "https://lroc.im-ldi.com/images/1408",
+    "group": "artemis",
+    "light": {
+      "centre_sun": 47.2,
+      "centre_earth": 79.6,
+      "best": {
+        "lat": -84.8066,
+        "lon": 28.8783,
+        "sun": 50.4,
+        "earth": 76.9,
+        "km": 1
+      }
+    }
+  },
+  {
+    "id": "mons-mouton",
+    "name": "Mons Mouton (summit / plateau)",
+    "region": "Mons Mouton / Mons Mouton Plateau",
+    "lat": -84.6,
+    "lon": 31.0,
+    "point_type": "feature centre (IAU)",
+    "validated": false,
+    "note": "Artemis III candidate region.",
+    "source": "https://en.wikipedia.org/wiki/Mons_Mouton",
+    "group": "artemis",
+    "light": {
+      "centre_sun": 33.3,
+      "centre_earth": 54.9,
+      "best": {
+        "lat": -84.6844,
+        "lon": 31.5488,
+        "sun": 45,
+        "earth": 68.9,
+        "km": 3
+      }
+    }
+  },
+  {
+    "id": "nobile-rim-1",
+    "name": "Nobile Rim 1",
+    "region": "Nobile Rim 1",
+    "lat": -85.45638,
+    "lon": 36.36065,
+    "point_type": "example point inside region (study)",
+    "validated": false,
+    "note": "Artemis III candidate region.",
+    "source": "https://www.researchgate.net/publication/396714246",
+    "group": "artemis",
+    "light": {
+      "centre_sun": 0,
+      "centre_earth": 12.7,
+      "best": {
+        "lat": -85.2985,
+        "lon": 36.9401,
+        "sun": 76.1,
+        "earth": 61.1,
+        "km": 5
+      }
+    }
+  },
+  {
+    "id": "nobile-rim-2",
+    "name": "Nobile Rim 2",
+    "region": "Nobile Rim 2",
+    "lat": -84.20156,
+    "lon": 60.69989,
+    "point_type": "example point inside region (study)",
+    "validated": false,
+    "note": "Artemis III candidate region; top-ranked point in a multi-criteria study.",
+    "source": "https://www.sciencedirect.com/science/article/pii/S0094576524006234",
+    "group": "artemis",
+    "light": {
+      "centre_sun": 35.7,
+      "centre_earth": 26.3,
+      "best": {
+        "lat": -84.1193,
+        "lon": 59.3,
+        "sun": 49.8,
+        "earth": 64.7,
+        "km": 5
+      }
+    }
+  },
+  {
+    "id": "haworth",
+    "name": "Haworth",
+    "region": "Haworth",
+    "lat": -86.72621,
+    "lon": -21.63869,
+    "point_type": "example point inside region (study)",
+    "validated": false,
+    "note": "Artemis III candidate region.",
+    "source": "https://www.researchgate.net/publication/396714246",
+    "group": "artemis",
+    "light": {
+      "centre_sun": 0,
+      "centre_earth": 0,
+      "best": {
+        "lat": -86.8302,
+        "lon": -21.744,
+        "sun": 47,
+        "earth": 53.9,
+        "km": 3.2
+      }
+    }
+  },
+  {
+    "id": "de-gerlache-rim-2",
+    "name": "de Gerlache Rim 2",
+    "region": "de Gerlache Rim 2",
+    "lat": -88.32833,
+    "lon": -69.89572,
+    "point_type": "point picked inside the Artemis III region (Quickmap, LROC/ASU)",
+    "validated": false,
+    "note": "Artemis III candidate region closest to the pole.",
+    "source": "https://quickmap.lroc.asu.edu (Artemis III candidate regions layer)",
+    "group": "artemis",
+    "light": {
+      "centre_sun": 52.3,
+      "centre_earth": 53.6,
+      "best": {
+        "lat": -88.2039,
+        "lon": -71.3422,
+        "sun": 54.4,
+        "earth": 51.6,
+        "km": 4
+      }
+    }
+  },
+  {
+    "id": "malapert-massif",
+    "name": "Malapert Massif",
+    "region": "Malapert Massif",
+    "lat": -85.89263,
+    "lon": 1.23645,
+    "point_type": "point picked inside the Artemis III region (Quickmap, LROC/ASU)",
+    "validated": false,
+    "note": "Artemis III candidate region; good Earth visibility.",
+    "source": "https://quickmap.lroc.asu.edu (Artemis III candidate regions layer)",
+    "group": "artemis",
+    "light": {
+      "centre_sun": 44.2,
+      "centre_earth": 99.9,
+      "best": {
+        "lat": -85.9565,
+        "lon": 2.1906,
+        "sun": 50.9,
+        "earth": 100,
+        "km": 2.8
+      }
+    }
+  },
+  {
+    "id": "im-1",
+    "name": "IM-1 Odysseus (Malapert A)",
+    "region": "Malapert A",
+    "lat": -80.13,
+    "lon": 1.44,
+    "group": "history",
+    "landed": "2024-02-22T23:23:00Z",
+    "note": "Intuitive Machines, NASA CLPS. Landed 22 Feb 2024, worked about a week until sunset.",
+    "source": "NASA LRO / LROC image 1360"
+  },
+  {
+    "id": "chandrayaan-3",
+    "name": "Chandrayaan-3 Vikram (Statio Shiv Shakti)",
+    "region": "Statio Shiv Shakti",
+    "lat": -69.373,
+    "lon": 32.319,
+    "group": "history",
+    "landed": "2023-08-23T12:33:00Z",
+    "note": "ISRO, India. First landing near the south pole, 23 Aug 2023, designed for one lunar day.",
+    "source": "IAU / ISRO"
+  },
+  {
+    "id": "slim",
+    "name": "SLIM (Shioli crater)",
+    "region": "Shioli crater",
+    "lat": -13.316,
+    "lon": 25.251,
+    "group": "history",
+    "landed": "2024-01-19T15:20:00Z",
+    "note": "JAXA, Japan. Pinpoint landing, 19 Jan 2024.",
+    "source": "NASA LRO / LROC image 1358"
+  },
+  {
+    "id": "blue-ghost-1",
+    "name": "Blue Ghost Mission 1 (Mare Crisium)",
+    "region": "Mare Crisium",
+    "lat": 18.56,
+    "lon": 61.81,
+    "group": "history",
+    "landed": "2025-03-02T08:34:00Z",
+    "note": "Firefly Aerospace, NASA CLPS. Landed 2 Mar 2025 near Mons Latreille, worked through lunar day into sunset.",
+    "source": "NASA LRO / LROC image 1400"
+  },
+  {
+    "id": "change-4",
+    "name": "Chang'e 4 (Von Karman crater)",
+    "region": "Von Karman crater, far side",
+    "lat": -45.4446,
+    "lon": 177.5991,
+    "group": "history",
+    "landed": "2019-01-03T02:26:00Z",
+    "note": "CNSA, China. First landing on the far side, 3 Jan 2019. Earth is never in view here, so it talks home through a relay satellite.",
+    "source": "CNSA / NASA LRO"
+  },
+  {
+    "id": "apollo-11",
+    "name": "Apollo 11 (Tranquility Base)",
+    "region": "Mare Tranquillitatis",
+    "lat": 0.67408,
+    "lon": 23.47297,
+    "group": "history",
+    "landed": "1969-07-20T20:17:40Z",
+    "note": "NASA, first crewed landing, 20 Jul 1969.",
+    "source": "NASA LRO"
+  },
+  {
+    "id": "apollo-15",
+    "name": "Apollo 15 (Hadley-Apennine)",
+    "region": "Hadley Rille",
+    "lat": 26.13224,
+    "lon": 3.634,
+    "group": "history",
+    "landed": "1971-07-30T22:16:29Z",
+    "note": "NASA, first mission with the lunar rover, 30 Jul 1971.",
+    "source": "NASA LRO"
+  },
+  {
+    "id": "apollo-17",
+    "name": "Apollo 17 (Taurus-Littrow)",
+    "region": "Taurus-Littrow valley",
+    "lat": 20.1908,
+    "lon": 30.77168,
+    "group": "history",
+    "landed": "1972-12-11T19:54:57Z",
+    "note": "NASA, last crewed landing so far, 11 Dec 1972.",
+    "source": "NASA LRO"
+  }
+]

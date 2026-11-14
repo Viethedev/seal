@@ -17,7 +17,7 @@ Preset Artemis III sites for the home page and map. Served from `docs/sites.json
 
 ---
 
-## `POST /api/compute`  — one site, full detail
+## `POST /api/compute` : one site, full detail
 
 **Request**
 ```json
@@ -63,7 +63,7 @@ Preset Artemis III sites for the home page and map. Served from `docs/sites.json
 
 ---
 
-## `POST /api/compare` — several sites, same dates
+## `POST /api/compare`: several sites, same dates
 
 **Request**
 ```json
@@ -89,7 +89,7 @@ site,time_utc,sun_az,sun_el,horizon_el_at_sun_az,sun_visible_frac,earth_az,earth
 
 ## Later (stretch): `POST /api/windows`
 `{ "site_ids": [...], "first_landing": "...", "days": 90, "observer_height_m": 2.0 }`
-→ for each site and each landing day: `usable_mission_days` (green ≥ 10, yellow 3–10, red < 3).
+→ for each site and each landing day: `usable_mission_days` (green ≥ 10, yellow 3-10, red < 3).
 Implementation = run `/api/compute` logic with `start` = each landing day.
 
 ---

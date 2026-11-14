@@ -1,4 +1,4 @@
-//! Step 2 — vectors, the local sky frame, and azimuth/elevation.
+//! Step 2: vectors, the local sky frame, and azimuth/elevation.
 
 use crate::R_MOON_KM;
 

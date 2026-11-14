@@ -1,4 +1,4 @@
-//! Step 3 — how much of the Sun / Earth disk is above the terrain.
+//! Step 3: how much of the Sun / Earth disk is above the terrain.
 
 /// Angular radius (deg) of a body of radius `radius_km` seen from `dist_km`.
 pub fn angular_radius_deg(radius_km: f64, dist_km: f64) -> f64 {
