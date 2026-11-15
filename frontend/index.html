@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SEAL: Sun-Earth Analysis for Landing</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+  <title>Sun-Earth Analysis for Landing</title>
+  <link rel="icon" type="image/svg+xml" href="seal_icon.svg">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -14,19 +13,85 @@
 </head>
 <body class="is-landing">
   <header class="topbar">
-    <a class="brand" href="#" id="home-link"><span class="logo" aria-hidden="true"></span>SEAL <small>Sun-Earth Analysis for Landing</small></a>
-    <span id="mode-badge" class="badge" hidden></span>
+    <a class="brand" href="#" id="home-link"><img class="logo" src="seal_icon.svg" alt="" aria-hidden="true"><small>Sun - Earth Analysis for Landing</small></a>
   </header>
 
   <!-- Landing: sits over the live 3D Moon -->
   <section id="landing" class="landing">
     <div class="landing-inner">
-      <p class="kicker">NASA Space Apps 2026, Lunar Landing Site Navigator challenge</p>
-      <h1>Sunlight and a line to Earth, at the Moon's south pole.</h1>
-      <p class="lead">Pick a landing site and a date. SEAL follows the Sun and Earth across the polar sky, hour by hour, and shows how long a lander stays powered and in contact.</p>
-      <button id="locate" class="primary big">Locate the place</button>
-      <p id="lead-error" class="status" hidden></p>
-      <p class="sources">Sun and Earth positions from NASA JPL Horizons. Imagery and terrain from NASA's Lunar Reconnaissance Orbiter.</p>
+      <div class="landing-hero">
+        <p class="kicker">NASA Space Apps 2026, Lunar Landing Site Navigator challenge</p>
+        <h1>This is <span class="seal-accent">SEAL</span></h1>
+        <h2 class="landing-subhead">Sunlight and a line to Earth, at the Moon’s south pole.</h2>
+        <p class="lead">Pick a landing site and a date. SEAL follows the Sun and Earth across the polar sky, hour by hour, and shows how long a lander stays powered and in contact.</p>
+        <button id="locate" class="primary big">Locate the place</button>
+        <p id="lead-error" class="status" hidden></p>
+        <a id="landing-scroll" class="landing-scroll" href="#mission-context">Scroll to explore the mission <span class="scroll-arrow" aria-hidden="true"><img src="arrow-down.svg" alt=""></span></a>
+      </div>
+
+      <div class="landing-story" id="mission-context">
+        <section class="mission-section context-section" aria-labelledby="mission-title">
+          <div class="mission-copy">
+            <p class="eyebrow">Mission Context</p>
+            <h2 id="mission-title">A landing site is more than a pin on the map.</h2>
+            <p>Near the lunar south pole, the Sun can skim the horizon while Earth dips out of view. Local ridges can block either one, affecting solar power and communication even when a location looks promising from orbit.</p>
+          </div>
+          <figure class="mission-figure">
+            <img src="images/vavilov-crater.jpg" alt="Deep black lunar night beside bright, sharply defined crater rims across Vavilov Crater" loading="lazy">
+            <figcaption>Long shadows accentuate Vavilov Crater’s rugged rim. <a href="https://images.nasa.gov/details/art002e009282" target="_blank" rel="noreferrer">NASA</a></figcaption>
+          </figure>
+        </section>
+        <section class="process-section" aria-labelledby="process-title">
+          <p class="eyebrow">What SEAL Does</p>
+          <h2 id="process-title">From landing options to operating windows.</h2>
+          <ol class="process-steps">
+            <li>
+              <span class="step-number">01</span>
+              <h3>Choose a site and date</h3>
+              <p>Start with a candidate landing site and a time to explore.</p>
+            </li>
+            <li>
+              <span class="step-number">02</span>
+              <h3>Compare Sun and Earth</h3>
+              <p>See when sunlight and Earth are visible above the local horizon.</p>
+            </li>
+            <li>
+              <span class="step-number">03</span>
+              <h3>Test lander trade-offs</h3>
+              <p>Explore how lander height and battery capacity affect operation.</p>
+            </li>
+          </ol>
+        </section>
+        <section class="mission-section goal-section" aria-labelledby="goal-title">
+          <div class="mission-copy">
+            <p class="eyebrow">Our Goal</p>
+            <h2 id="goal-title">Find a place and time a lander can keep working.</h2>
+            <p>Help mission teams evaluate where and when a lunar lander can stay powered by sunlight and connected to Earth.</p>
+          </div>
+          <figure class="mission-figure">
+            <img src="images/artemis-operations-room.jpg" alt="NASA Artemis mission operations control room with consoles and mission displays" loading="lazy">
+            <figcaption>Artemis science and landing operations control rooms at NASA Marshall. <a href="https://images.nasa.gov/details/CEB_0283" target="_blank" rel="noreferrer">NASA/Charles Beason</a></figcaption>
+          </figure>
+        </section>
+        <footer class="landing-footer">
+          <div class="team-mark">
+            <img src="spacelanders_team_mark.png" alt="Spacelanders team logo">
+            <h2>Spacelanders</h2>
+            <p>An international crew of curious minds, builders, and explorers, united by a shared ambition to turn curiosity into something real and reach a little further beyond Earth.</p>
+          </div>
+          <section class="landing-data-credit" aria-labelledby="data-title">
+            <div class="nasa-credit-heading">
+              <img src="nasa-logo.svg" alt="NASA insignia">
+              <h2 id="data-title">Built with NASA data</h2>
+            </div>
+            <p>Sun and Earth positions come from NASA/JPL Horizons. Local terrain is modeled with LOLA elevation data from the Lunar Reconnaissance Orbiter (LRO).</p>
+            <div class="data-source-links">
+              <a class="secondary source-link" href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener noreferrer">NASA/JPL Horizons <span aria-hidden="true">↗</span></a>
+              <a class="secondary source-link" href="https://science.nasa.gov/mission/lro/" target="_blank" rel="noopener noreferrer">NASA Lunar Reconnaissance Orbiter <span aria-hidden="true">↗</span></a>
+            </div>
+          </section>
+        </footer>
+      </div>
     </div>
   </section>
 

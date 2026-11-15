@@ -594,17 +594,22 @@ async function boot() {
     } else buf = await (await j("data/" + f)).arrayBuffer();
     SEAL.setTerrain(meta, new Int16Array(buf));
   } catch { /* flat horizon until terrain is added */ }
-  $("mode-badge").textContent = SEAL.terrain ? "Terrain: LRO LOLA" : "Terrain: flat (LOLA coming)";
-  $("mode-badge").title = SEAL.terrain ? "Horizons traced from NASA LRO LOLA heights" : "Hills not included yet: horizon treated as flat";
-  $("mode-badge").hidden = false;
   $("info").innerHTML = emptyInfoHTML(); renderSiteList(); setDefaultDates();
   $("locate").onclick = openExplorer;
+  $("landing-scroll").onclick = (e) => {
+    e.preventDefault();
+    history.replaceState(null, "", "#mission-context");
+    $("mission-context").scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   setupSplitter(); initMap(); state.applyInset();
   const r0 = SEAL.range(), now0 = Math.min(Math.max(Date.now(), Date.parse(r0.start)), Date.parse(r0.end));
   Globe.showcase(SEAL._vecAt(SEAL.eph.sun, now0)); drawRelief(now0);
   for (const src of ["moon_global.jpg", "south_pole_wac.jpg"]) { const im = new Image(); im.src = src; } // warm the cache
   $("home-link").onclick = (e) => {
-    e.preventDefault(); document.body.classList.add("is-landing"); $("cal-modal").hidden = true; state.applyInset();
+    e.preventDefault();
+    history.replaceState(null, "", location.pathname + location.search);
+    $("landing").scrollTop = 0;
+    document.body.classList.add("is-landing"); $("cal-modal").hidden = true; state.applyInset();
     const r = SEAL.range(), now = Math.min(Math.max(Date.now(), Date.parse(r.start)), Date.parse(r.end));
     Globe.showcase(SEAL._vecAt(SEAL.eph.sun, now));
   };

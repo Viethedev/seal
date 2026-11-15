@@ -3,6 +3,8 @@
 Plain HTML/CSS/JS. Published to GitHub Pages by `.github/workflows/pages.yml`; works on any static web host.
 three.js (3D Moon) and Chart.js (charts) load from cdnjs.
 
+The landing page opens over the rotating Moon, then scrolls through a white mission-context section and a black goal section. NASA's Artemis II Vavilov Crater image and Marshall Artemis operations-room photo are stored in `images/` and credited in their captions.
+
 Flow: landing page → pick a site or drop a pin → **landing calendar pops up** (Google-Flights style: each date shows days of operation, green/yellow/orange; battery + night-power inputs; click a date for the power plan; **trade-off table** of the best landing per lunar day vs battery needed to survive the first night) →
 then: landing page → **Locate the place** → interactive map of the lunar south pole.
 Click a site marker or **anywhere** → info panel → dates → **Analyse** → verdict, sunset/Earthset countdown, Sun height, **Time machine** slider (moves Sun/Earth on the sky view and redraws Sun shadows / Earth visibility on the map), **Landing-date finder** (90-day strip coloured by days of power + radio), charts, Compare, Export CSV.

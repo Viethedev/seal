@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <clipPath id="moon-clip">
+      <circle cx="205" cy="205" r="125"/>
+    </clipPath>
+  </defs>
+  <!-- Tail Fin (left) -->
+  <path d="M 88 242 C 62 212, 55 222, 62 248 C 42 245, 42 268, 72 280 C 88 286, 105 282, 115 276 Z" fill="#F8F9FA" stroke="#1E2229" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Right Flipper (waving outward/upward) -->
+  <path d="M 320 220 C 338 192, 360 185, 366 205 C 372 225, 355 252, 330 252 C 318 252, 312 246, 308 240 Z" fill="#F8F9FA" stroke="#1E2229" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Main Lunar White Moon Body -->
+  <circle cx="205" cy="205" r="125" fill="#F8F9FA"/>
+  <!-- Clipped Light Gray Lunar Craters -->
+  <g clip-path="url(#moon-clip)">
+    <!-- Top-left crater curve -->
+    <circle cx="115" cy="125" r="68" fill="#CBD5E1" stroke="#CBD5E1" stroke-width="4.5" transform="translate(22 -22.5)"/>
+    <!-- Bottom-left crater circle -->
+    <circle cx="142" cy="268" r="32" fill="#CBD5E1" stroke="#CBD5E1" stroke-width="4.5" transform="translate(-55.53 -86.31) scale(1.259 1.234)"/>
+    <!-- Bottom-right large oval crater -->
+    <ellipse cx="268" cy="285" rx="48" ry="62" fill="#CBD5E1" stroke="#CBD5E1" stroke-width="4.5" transform="translate(-111.13 -29.12) scale(1.432 1.185)"/>
+  </g>
+  <!-- Outer Moon Outline -->
+  <circle cx="205" cy="205" r="125" fill="none" stroke="#1E2229" stroke-width="8"/>
+  <!-- Front/Left Flipper (C-shaped paddle on body) -->
+  <path d="M 218 202 C 185 186, 168 202, 172 222 C 176 242, 198 245, 212 232" fill="#F8F9FA" stroke="#1E2229" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" transform="translate(-82.07 -10.39) scale(1.233 1.128)"/>
+  <!-- Seal Face -->
+  <!-- Light gray crater ring around Left Eye -->
+  <!-- Left Eye -->
+  <circle cx="220" cy="142" r="16" fill="#1E2229" transform="translate(-162.18 -74.06) scale(1.669 1.647)"/>
+  <circle cx="215" cy="137" r="5" fill="#F8F9FA" transform="translate(-321.09 -179.81) scale(2.5 2.479)"/>
+  <!-- Right Eye (sitting on the upper-right rim) -->
+  <circle cx="285" cy="130" r="15" fill="#1E2229" transform="translate(-186.76 -72.26) scale(1.655 1.654)"/>
+  <circle cx="280" cy="125" r="4.5" fill="#F8F9FA" transform="translate(-331.16 -146.86) scale(2.222 2.317)"/>
+  <!-- Nose & W-Mouth (Properly aligned and spaced away from whisker freckles) -->
+  <path d="M 254 148 C 254 144, 265 144, 265 148 C 265 154, 260 156, 260 156 C 260 156, 254 154, 254 148 Z" fill="#1E2229" transform="translate(-242.11 9.98) rotate(-9.4) scale(1.765 1.662) skewX(1.16)"/>
+  <path d="M 244 162 C 248 171, 258 169, 260 156 C 262 169, 272 171, 276 162" fill="none" stroke="#1E2229" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" transform="translate(-136.72 16.78) rotate(-11.59) scale(1.404 1.617) skewX(-3.43)"/>
+  <!-- Whisker Freckles (Cleanly separated with proper clearance) -->
+  <circle cx="232" cy="158" r="2.5" fill="#1E2229" transform="translate(-17 49.5)"/>
+  <circle cx="238" cy="166" r="2.5" fill="#1E2229" transform="translate(-20.5 30.06)"/>
+  <circle cx="226" cy="168" r="2.5" fill="#1E2229" transform="translate(56.5 18.17)"/>
+  <circle cx="290" cy="150" r="2.5" fill="#1E2229" transform="translate(8.33 36.17)"/>
+  <circle cx="286" cy="158" r="2.5" fill="#1E2229" transform="translate(-57.09 40.56)"/>
+  <circle cx="296" cy="160" r="2.5" fill="#1E2229" transform="translate(-5 18.57)"/>
+</svg>

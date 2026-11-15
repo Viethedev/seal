@@ -90,10 +90,14 @@
     g.setIndex(I); g.computeVertexNormals(); return g;
   }
 
+  function renderPixelRatio() {
+    return (window.devicePixelRatio || 1) >= 1.5 ? 1.5 : 1;
+  }
+
   function init(el, { globalTex, poleTex, poleHalf, overlayHalf }) {
     G.el = el; G.poleHalf = poleHalf; G.overlayHalf = overlayHalf || poleHalf;
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(renderPixelRatio());
     renderer.setClearColor(0x03050a);
     el.appendChild(renderer.domElement);
     const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(35, 1, 0.001, 100);
@@ -161,7 +165,10 @@
       }
       down = null; G.dragging = false;
     });
-    el.addEventListener("wheel", (e) => { e.preventDefault(); G.anim = null; G.cam.dist = Math.max(1.04, Math.min(6, 1 + (G.cam.dist - 1) * Math.exp(e.deltaY * 0.0012))); }, { passive: false });
+    el.addEventListener("wheel", (e) => {
+      if (e.ctrlKey || e.metaKey) return;
+      e.preventDefault(); G.anim = null; G.cam.dist = Math.max(1.04, Math.min(6, 1 + (G.cam.dist - 1) * Math.exp(e.deltaY * 0.0012)));
+    }, { passive: false });
 
     new ResizeObserver(resize).observe(el); resize();
     const loop = () => { step(); renderer.render(scene, camera); placeLabels(); requestAnimationFrame(loop); };
@@ -190,12 +197,21 @@
   G.inset = { left: 0, bottom: 0 };
   function setInset(i) { G.inset = { left: i.left || 0, bottom: i.bottom || 0 }; resize(); }
   function resize() {
+    const pixelRatio = renderPixelRatio();
     const w = G.el.clientWidth || 1, h = G.el.clientHeight || 1;
-    G.renderer.setSize(w, h, false); G.renderer.domElement.style.width = w + "px"; G.renderer.domElement.style.height = h + "px";
+    const canvas = G.renderer.domElement;
+    const pixelRatioChanged = G.renderer.getPixelRatio() !== pixelRatio;
+    const sizeChanged = canvas.style.width !== w + "px" || canvas.style.height !== h + "px";
+    if (pixelRatioChanged) G.renderer.setPixelRatio(pixelRatio);
+    if (sizeChanged) {
+      G.renderer.setSize(w, h, false);
+      canvas.style.width = w + "px"; canvas.style.height = h + "px";
+    }
     G.camera.aspect = w / h;
     G.camera.setViewOffset(w, h, -G.inset.left / 2, G.inset.bottom / 2, w, h);
     G.camera.updateProjectionMatrix();
   }
+  window.addEventListener("resize", resize);
   function step() {
     if (G.spin && !G.anim && !G.dragging) G.cam.lon += 0.025;
     if (G.anim) {
