@@ -578,6 +578,14 @@ function setupSplitter() {
   window.addEventListener("resize", () => state.map && apply());
 }
 async function openExplorer() {
+  const locate = $("locate");
+  if (!Globe.isReady()) {
+    locate.textContent = "Loading...";
+    locate.disabled = true;
+    await Globe.whenReady();
+    locate.textContent = "Locate the place";
+    locate.disabled = false;
+  }
   document.body.classList.remove("is-landing");
   state.applyInset && state.applyInset();
   Globe.toPole();

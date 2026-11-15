@@ -104,8 +104,8 @@
     scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0x9aa4b8, size: 0.06, sizeAttenuation: true })));
 
     const loader = new THREE.TextureLoader();
-    let pending = 2; G.ready = new Promise((res) => (G._ready = res));
-    const loaded = () => { if (--pending === 0) { G.globe.visible = G.cap.visible = true; G._ready(); } };
+    let pending = 2; G.loaded = false; G.ready = new Promise((res) => (G._ready = res));
+    const loaded = () => { if (--pending === 0) { G.globe.visible = G.cap.visible = true; G.loaded = true; G._ready(); } };
     G.ambient = new THREE.AmbientLight(0xffffff, 0.5); scene.add(G.ambient);
     G.sun = new THREE.DirectionalLight(0xfff4e0, 1.05); G.sun.position.set(2, 0.3, 1); scene.add(G.sun);
     const globeMat = dayNightMaterial(null, 1.12, 0.9); G.shaded = [globeMat];
@@ -284,5 +284,5 @@
     if (G.cam.dist < 2.5) flyTo(-18, lon0, 3.1, 1600); else G.cam = { lat: -18, lon: lon0, dist: 3.1 };
   }
   function toPole() { G.spin = false; G.ready.then(() => flyTo(-89.5, 0, 1.62, 3200, 0.35)); }
-  root.Globe = { setRelief, showcase, toPole, setInset, init, setSites, select, setPin, setPinName, setOverlay, setSun, flyTo, focus, intro, resize, on: (k, f) => (G.handlers[k] = f), _G: G };
+  root.Globe = { setRelief, showcase, toPole, setInset, init, setSites, select, setPin, setPinName, setOverlay, setSun, flyTo, focus, intro, resize, isReady: () => G.loaded, whenReady: () => G.ready, on: (k, f) => (G.handlers[k] = f), _G: G };
 })(window);
