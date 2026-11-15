@@ -45,7 +45,7 @@
   // meta: { pixel_m, width, height, x0_m, y0_m (centre of top-left pixel), x_axis_lon, y_axis_lon, nodata }
   // Grid x = rho*cos(lon - x_axis_lon), y = rho*cos(lon - y_axis_lon); rows go down (-y), columns right (+x).
   let TERRAIN = null;
-  function setTerrain(meta, int16) { TERRAIN = { ...meta, data: int16 }; MASKS.clear(); return TERRAIN; }
+  function setTerrain(meta, int16) { TERRAIN = { ...meta, data: int16 }; MASKS.clear(); RELIEF = null; return TERRAIN; }
   function stereo(lat, lon) { // metres, south polar stereographic on the 1737.4 km sphere
     const rho = 2 * R_KM * 1000 * Math.tan(Math.PI / 4 + (lat * D) / 2);
     return rho;
@@ -282,37 +282,77 @@
   // Sun-lit relief of the terrain on a polar grid (row 0 = +y). Slopes facing the Sun brighten, slopes facing away darken.
   // Returns RGBA bytes; alpha 0 where there is no terrain. Slopes are computed once per grid and cached.
   let RELIEF = null;
-  function reliefImage(t, { N = 1024, half_m = 320003 } = {}) {
-    if (!TERRAIN) return null;
-    const Rm = R_KM * 1000, px = (2 * half_m) / N;
-    if (!RELIEF || RELIEF.N !== N || RELIEF.half !== half_m || RELIEF.T !== TERRAIN) {
-      const ge = new Float32Array(N * N), gn = new Float32Array(N * N), ok = new Uint8Array(N * N), trig = new Float32Array(N * N * 4);
-      const T = TERRAIN, xmin = T.x0_m, xmax = T.x0_m + (T.width - 1) * T.pixel_m, ymax = T.y0_m, ymin = T.y0_m - (T.height - 1) * T.pixel_m;
-      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-        const i = r * N + c, x = -half_m + (c + 0.5) * px, y = half_m - (r + 0.5) * px;
-        const hx1 = heightXY(x + px, y), hx0 = heightXY(x - px, y), hy1 = heightXY(x, y + px), hy0 = heightXY(x, y - px);
-        if (hx1 == null || hx0 == null || hy1 == null || hy0 == null) continue;
-        const gx = (hx1 - hx0) / (2 * px), gy = (hy1 - hy0) / (2 * px), lon = Math.atan2(x, y), rho = Math.hypot(x, y);
-        const lat = 2 * Math.atan(rho / (2 * Rm)) - Math.PI / 2, cl = Math.cos(lon), sl = Math.sin(lon);
-        ge[i] = gx * cl - gy * sl; gn[i] = gx * sl + gy * cl;
-        ok[i] = Math.max(1, Math.min(255, Math.round(255 * Math.min(x - xmin, xmax - x, y - ymin, ymax - y) / 30000))); // fade out near the grid edge
-        trig.set([Math.sin(lat), Math.cos(lat), sl, cl], i * 4);
-      }
-      RELIEF = { N, half: half_m, T: TERRAIN, ge, gn, ok, trig, out: new Uint8ClampedArray(N * N * 4) };
+  function reliefGrid(N, half_m) {
+    if (RELIEF && RELIEF.N === N && RELIEF.half === half_m && RELIEF.T === TERRAIN) return RELIEF;
+    RELIEF = {
+      N, half: half_m, T: TERRAIN, preparedRows: 0,
+      ge: new Float32Array(N * N), gn: new Float32Array(N * N),
+      ok: new Uint8Array(N * N), trig: new Float32Array(N * N * 4),
+      out: new Uint8ClampedArray(N * N * 4), job: Promise.resolve()
+    };
+    return RELIEF;
+  }
+  function prepareReliefRows(grid, start, end) {
+    const { N, half, T, ge, gn, ok, trig } = grid, Rm = R_KM * 1000, px = (2 * half) / N;
+    const xmin = T.x0_m, xmax = T.x0_m + (T.width - 1) * T.pixel_m, ymax = T.y0_m, ymin = T.y0_m - (T.height - 1) * T.pixel_m;
+    for (let r = start; r < end; r++) for (let c = 0; c < N; c++) {
+      const i = r * N + c, x = -half + (c + 0.5) * px, y = half - (r + 0.5) * px;
+      const hx1 = heightXY(x + px, y), hx0 = heightXY(x - px, y), hy1 = heightXY(x, y + px), hy0 = heightXY(x, y - px);
+      if (hx1 == null || hx0 == null || hy1 == null || hy0 == null) continue;
+      const gx = (hx1 - hx0) / (2 * px), gy = (hy1 - hy0) / (2 * px), lon = Math.atan2(x, y), rho = Math.hypot(x, y);
+      const lat = 2 * Math.atan(rho / (2 * Rm)) - Math.PI / 2, cl = Math.cos(lon), sl = Math.sin(lon);
+      ge[i] = gx * cl - gy * sl; gn[i] = gx * sl + gy * cl;
+      ok[i] = Math.max(1, Math.min(255, Math.round(255 * Math.min(x - xmin, xmax - x, y - ymin, ymax - y) / 30000)));
+      trig.set([Math.sin(lat), Math.cos(lat), sl, cl], i * 4);
     }
-    const { hat } = bodyHat("sun", t), { ge, gn, ok, trig, out } = RELIEF;
-    for (let i = 0, n = N * N; i < n; i++) {
-      const j = i * 4;
+    grid.preparedRows = end;
+  }
+  function shadeReliefRows(grid, hat, start, end) {
+    const { N, ge, gn, ok, trig, out } = grid;
+    for (let r = start; r < end; r++) for (let c = 0; c < N; c++) {
+      const i = r * N + c, j = i * 4;
       if (!ok[i]) { out[j + 3] = 0; continue; }
       const sla = trig[j], cla = trig[j + 1], sl = trig[j + 2], cl = trig[j + 3];
       const se = -sl * hat[0] + cl * hat[1], sn = -sla * cl * hat[0] - sla * sl * hat[1] + cla * hat[2], su = cla * cl * hat[0] + cla * sl * hat[1] + sla * hat[2];
       const sh = Math.hypot(se, sn) || 1e-6, nn = Math.sqrt(1 + ge[i] * ge[i] + gn[i] * gn[i]);
-      const lam = (-ge[i] * se - gn[i] * sn + su) / nn;            // cosine of the Sun on this slope
-      const k = (-ge[i] * se - gn[i] * sn) / sh;                    // slope toward the Sun (tan)
+      const lam = (-ge[i] * se - gn[i] * sn + su) / nn;
+      const k = (-ge[i] * se - gn[i] * sn) / sh;
       const v = lam <= 0 ? 0.07 : Math.min(1, Math.max(0.1, 0.56 + 1.7 * k));
       out[j] = out[j + 1] = out[j + 2] = v * 236; out[j + 3] = ok[i];
     }
-    return out;
+  }
+  function reliefYield() {
+    return new Promise((resolve) => {
+      if (typeof root.requestIdleCallback === "function") root.requestIdleCallback(resolve, { timeout: 50 });
+      else if (typeof root.requestAnimationFrame === "function") root.requestAnimationFrame(resolve);
+      else setTimeout(resolve, 0);
+    });
+  }
+  function reliefImage(t, { N = 1024, half_m = 320003 } = {}) {
+    if (!TERRAIN) return null;
+    const grid = reliefGrid(N, half_m);
+    if (grid.preparedRows < N) prepareReliefRows(grid, grid.preparedRows, N);
+    shadeReliefRows(grid, bodyHat("sun", t).hat, 0, N);
+    return grid.out;
+  }
+  function reliefImageAsync(t, { N = 1024, half_m = 320003 } = {}) {
+    if (!TERRAIN) return Promise.resolve(null);
+    const grid = reliefGrid(N, half_m);
+    const render = async () => {
+      while (grid.preparedRows < N) {
+        prepareReliefRows(grid, grid.preparedRows, Math.min(N, grid.preparedRows + 8));
+        await reliefYield();
+      }
+      const hat = bodyHat("sun", t).hat;
+      for (let r = 0; r < N; r += 8) {
+        shadeReliefRows(grid, hat, r, Math.min(N, r + 8));
+        await reliefYield();
+      }
+      return grid.out;
+    };
+    const job = grid.job.then(render, render);
+    grid.job = job.then(() => undefined, () => undefined);
+    return job;
   }
   function lightField(t, { body = "sun", N = 300, half_m = 304000, max_km = 120, extra = false } = {}) {
     const { hat, v } = bodyHat(body, t), dist = Math.hypot(v[0], v[1], v[2]);
@@ -355,5 +395,5 @@
     return { sun: { ...s, horizon: maskAt(mask, s.az) }, earth: { ...e, horizon: maskAt(mask, e.az) } };
   }
 
-  root.SEAL = { reliefImage, tradeoffs, missionCalendar, batteryPlan, missionTrack, landingScan, lightField, sunEarthAt, heightXY, setEphemeris, setTerrain, compute, horizonMask, heightM, range, metrics, visibleFraction, _vecAt: vecAt, _azEl: azEl, _frame: frame, get eph() { return EPH; }, get terrain() { return TERRAIN; } };
+  root.SEAL = { reliefImage, reliefImageAsync, tradeoffs, missionCalendar, batteryPlan, missionTrack, landingScan, lightField, sunEarthAt, heightXY, setEphemeris, setTerrain, compute, horizonMask, heightM, range, metrics, visibleFraction, _vecAt: vecAt, _azEl: azEl, _frame: frame, get eph() { return EPH; }, get terrain() { return TERRAIN; } };
 })(typeof window !== "undefined" ? window : globalThis);

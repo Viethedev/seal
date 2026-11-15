@@ -104,18 +104,24 @@
     scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0x9aa4b8, size: 0.06, sizeAttenuation: true })));
 
     const loader = new THREE.TextureLoader();
-    let pending = 2; G.ready = new Promise((res) => (G._ready = res));
-    const loaded = () => { if (--pending === 0) { G.globe.visible = G.cap.visible = true; G._ready(); } };
+    G.ready = new Promise((res) => (G._ready = res));
     G.ambient = new THREE.AmbientLight(0xffffff, 0.5); scene.add(G.ambient);
     G.sun = new THREE.DirectionalLight(0xfff4e0, 1.05); G.sun.position.set(2, 0.3, 1); scene.add(G.sun);
     const globeMat = dayNightMaterial(null, 1.12, 0.9); G.shaded = [globeMat];
     G.globe = new THREE.Mesh(new THREE.SphereGeometry(1, 192, 96), globeMat); G.globe.visible = false; scene.add(G.globe);
-    loader.load(globalTex, (t) => { t.anisotropy = 4; globeMat.uniforms.map.value = t; loaded(); }, undefined, loaded);
+    loader.load(globalTex, (t) => {
+      t.anisotropy = 4; globeMat.uniforms.map.value = t; G.globe.visible = true; G._ready();
+    }, undefined, (error) => {
+      G.globe.visible = true; G._ready();
+      console.warn("Could not load the global lunar texture.", error);
+    });
 
     // same kind of image (LRO WAC camera mosaic) and same lighting as the globe, feathered into it
     const capMat = dayNightMaterial(featherMask(0.62), 1.18, 0.8); G.shaded.push(capMat); G.capMat = capMat;
     G.cap = new THREE.Mesh(capGeometry(poleHalf, 1.0006), capMat); G.cap.visible = false; scene.add(G.cap);
-    loader.load(poleTex, (t) => { t.anisotropy = 8; capMat.uniforms.map.value = t; loaded(); }, undefined, loaded);
+    loader.load(poleTex, (t) => {
+      t.anisotropy = 8; capMat.uniforms.map.value = t; G.cap.visible = true;
+    }, undefined, (error) => console.warn("Could not load the south-pole lunar texture.", error));
 
     // lighting overlay covers a wider area than the cap, also feathered, so shadows blend into the globe
     G.overlayMat = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 1, side: THREE.DoubleSide, alphaMap: featherMask(0.8) });

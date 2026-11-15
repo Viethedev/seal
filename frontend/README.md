@@ -1,7 +1,7 @@
 # SEAL website (fully online, no server needed)
 
 Plain HTML/CSS/JS. Published to GitHub Pages by `.github/workflows/pages.yml`; works on any static web host.
-three.js (3D Moon) and Chart.js (charts) load from cdnjs.
+Three.js r128 (3D Moon) is bundled in `vendor/three.min.js` with its MIT license. Chart.js loads from cdnjs only when the first analysis is run.
 
 The landing page opens over the rotating Moon, then scrolls through a white mission-context section and a black goal section. NASA's Artemis II Vavilov Crater image and Marshall Artemis operations-room photo are stored in `images/` and credited in their captions.
 
@@ -16,8 +16,8 @@ All maths runs in the visitor's browser (`engine.js`, a JS mirror of `science/`)
   format in `docs/TERRAIN_FORMAT.md`). SEAL traces the real skyline (720 directions, 150 km); outside the grid the horizon is flat.
 - `data/sites.json`, 7 Artemis presets plus past landings (copy of `docs/sites.json`). Artemis presets carry their 2025 sunlight and the best lit spot within 5 km (`light`).
 
-Moon: 3D globe (three.js, `globe.js`) with `moon_global.jpg` (LRO WAC global mosaic, NASA Moon Trek) and `south_pole_wac.jpg`
-(LRO WAC south-pole mosaic, ±320 km) blended into the south-pole cap. `south_pole_lola.jpg` is the landing-page background. Near the pole the photo is replaced by relief lit live from the LOLA slopes and the real Sun (`reliefImage` in engine.js), plus cast shadows, so all shadows move together.
+Moon: 3D globe (Three.js, `globe.js`) with `moon_global.jpg` (LRO WAC global mosaic, NASA Moon Trek) and `south_pole_wac.jpg`
+(LRO WAC south-pole mosaic, ±320 km) blended into the south-pole cap. `south_pole_lola.jpg` is the landing-page background. The globe and polar cap appear as their own textures finish loading. Optional LOLA terrain loads in parallel with the interface; coarse relief appears first, then `reliefImageAsync` refines it in idle-time chunks. Near the pole the photo is replaced by relief lit live from the LOLA slopes and the real Sun, plus cast shadows, so all shadows move together.
 Layout: drag the divider between Moon and results; the Time machine stays pinned while the charts scroll.
 Test locally: `python3 -m http.server 8000` in this folder → http://localhost:8000
 

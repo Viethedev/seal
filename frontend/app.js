@@ -220,12 +220,35 @@ function renderCompare() {
 }
 
 // ---------- run ----------
+let chartPromise = null;
+function loadChartLibrary() {
+  if (window.Chart) { tidyLegends(); return Promise.resolve(); }
+  if (!chartPromise) {
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js";
+    chartPromise = new Promise((resolve, reject) => {
+      script.onload = () => {
+        if (!window.Chart) { reject(new Error("Chart.js loaded without exposing its API.")); return; }
+        tidyLegends(); resolve();
+      };
+      script.onerror = () => reject(new Error("Could not load Chart.js from cdnjs."));
+      document.head.appendChild(script);
+    }).catch((error) => {
+      script.remove();
+      chartPromise = null;
+      throw error;
+    });
+  }
+  return chartPromise;
+}
 async function run(sites) {
   const q = queryBody();
   $("status").textContent = SEAL.terrain ? "Tracing the skyline from LOLA terrain and computing…" : "Computing…";
   await new Promise((r) => setTimeout(r, 30)); // let the status paint
   try {
     const results = sites.map((s) => SEAL.compute(s, q));
+    $("status").textContent = "Loading charts…";
+    await loadChartLibrary();
     $("status").textContent = "";
     state.last = results;
     renderResults(results);
@@ -486,16 +509,41 @@ function updateTimeline() {
 }
 function drawLight(t) { drawLightAt(t); }
 const relief = { t: null, pending: false, canvas: null };
+function paintRelief(px, N) {
+  const size = 1024;
+  if (!relief.canvas) { relief.canvas = document.createElement("canvas"); relief.canvas.width = relief.canvas.height = size; }
+  const ctx = relief.canvas.getContext("2d");
+  if (N === size) {
+    ctx.putImageData(new ImageData(px, N, N), 0, 0);
+  } else {
+    const coarse = document.createElement("canvas"); coarse.width = coarse.height = N;
+    coarse.getContext("2d").putImageData(new ImageData(px, N, N), 0, 0);
+    ctx.clearRect(0, 0, size, size); ctx.drawImage(coarse, 0, 0, size, size);
+  }
+  Globe.setRelief(relief.canvas);
+}
 function drawRelief(t) {
   if (!SEAL.terrain) return;
-  relief.t = t; if (relief.pending) return; relief.pending = true;
-  requestAnimationFrame(() => {
-    relief.pending = false;
-    const N = 1024, px = SEAL.reliefImage(relief.t, { N, half_m: SNAP_HALF }); if (!px) return;
-    if (!relief.canvas) { relief.canvas = document.createElement("canvas"); relief.canvas.width = relief.canvas.height = N; }
-    relief.canvas.getContext("2d").putImageData(new ImageData(px, N, N), 0, 0);
-    Globe.setRelief(relief.canvas);
-  });
+  relief.t = t; relief.version = (relief.version || 0) + 1;
+  if (!relief.coarse) {
+    const coarse = SEAL.reliefImage(t, { N: 128, half_m: SNAP_HALF });
+    if (coarse) paintRelief(coarse, 128);
+    relief.coarse = true;
+  }
+  if (relief.pending) return;
+  relief.pending = true;
+  const renderLatest = () => {
+    const version = relief.version, time = relief.t;
+    SEAL.reliefImageAsync(time, { N: 1024, half_m: SNAP_HALF }).then((px) => {
+      if (version !== relief.version) { renderLatest(); return; }
+      if (px) paintRelief(px, 1024);
+      relief.pending = false;
+    }).catch((error) => {
+      relief.pending = false;
+      console.error("Could not render lunar terrain relief.", error);
+    });
+  };
+  requestAnimationFrame(renderLatest);
 }
 function drawLightAt(t) {
   if (!state.map) return;
@@ -617,17 +665,8 @@ async function boot() {
   locate.textContent = "Loading...";
   locate.disabled = true;
   setupTips();
-  tidyLegends();
   const j = async (u) => { const r = await fetch(u); if (!r.ok) throw new Error(u + " " + r.status); return r; };
-  try {
-    const [sites, eph] = await Promise.all([j("data/sites.json").then((r) => r.json()), j("data/ephemeris.json").then((r) => r.json())]);
-    state.sites = sites; SEAL.setEphemeris(eph);
-  } catch (e) {
-    $("lead-error").hidden = false; $("lead-error").textContent = "Could not load SEAL data: " + e.message;
-    locate.textContent = "Unavailable";
-    return;
-  }
-  try { // optional terrain from lmaoxd's LOLA reader
+  const terrainReady = (async () => { // optional terrain from lmaoxd's LOLA reader
     const meta = await (await j("data/terrain.json")).json();
     const f = meta.file || "terrain.bin";
     let buf;
@@ -637,7 +676,19 @@ async function boot() {
       buf = u8.buffer;
     } else buf = await (await j("data/" + f)).arrayBuffer();
     SEAL.setTerrain(meta, new Int16Array(buf));
-  } catch { /* flat horizon until terrain is added */ }
+    return true;
+  })().catch((error) => {
+    console.warn("Optional LOLA terrain unavailable; using a flat horizon.", error);
+    return false;
+  });
+  try {
+    const [sites, eph] = await Promise.all([j("data/sites.json").then((r) => r.json()), j("data/ephemeris.json").then((r) => r.json())]);
+    state.sites = sites; SEAL.setEphemeris(eph);
+  } catch (e) {
+    $("lead-error").hidden = false; $("lead-error").textContent = "Could not load SEAL data: " + e.message;
+    locate.textContent = "Unavailable";
+    return;
+  }
   $("info").innerHTML = emptyInfoHTML(); renderSiteList(); setDefaultDates();
   $("locate").onclick = openExplorer;
   $("landing-scroll").onclick = (e) => {
@@ -645,10 +696,12 @@ async function boot() {
     history.replaceState(null, "", "#mission-context");
     $("mission-context").scrollIntoView({ behavior: "smooth", block: "start" });
   };
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   setupSplitter(); initMap(); state.applyInset();
   Globe.whenReady().then(() => { locate.textContent = "Locate the place"; locate.disabled = false; });
   const r0 = SEAL.range(), now0 = Math.min(Math.max(Date.now(), Date.parse(r0.start)), Date.parse(r0.end));
   Globe.showcase(SEAL._vecAt(SEAL.eph.sun, now0)); drawRelief(now0);
+  terrainReady.then((loaded) => { if (loaded) drawLightAt(relief.t == null ? now0 : relief.t); });
   for (const src of ["moon_global.jpg", "south_pole_wac.jpg"]) { const im = new Image(); im.src = src; } // warm the cache
   $("home-link").onclick = (e) => {
     e.preventDefault();
