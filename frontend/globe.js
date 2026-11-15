@@ -17,27 +17,21 @@
   const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
   const G = {
-    cam: { lat: 15, lon: -20, dist: 4.2 }, anim: null, sites: [], markers: [], labels: [], selected: null, pin: null,
+    cam: { lat: 15, lon: -20, dist: 4.2 }, anim: null, sites: [], markers: [], labels: [], selected: null, pin: null, pinLabel: null,
     handlers: { site: () => {}, pick: () => {}, hover: () => {} },
   };
 
   const DOTS = {};
   function dotTexture(color) {
     if (DOTS[color]) return DOTS[color];
-    const c = document.createElement("canvas"); c.width = c.height = 64;
-    const x = c.getContext("2d"), g = x.createRadialGradient(32, 32, 2, 32, 32, 30);
-    g.addColorStop(0, "#ffffff"); g.addColorStop(0.25, color); g.addColorStop(0.55, color + "aa"); g.addColorStop(1, color + "00");
-    x.fillStyle = g; x.fillRect(0, 0, 64, 64);
-    return (DOTS[color] = new THREE.CanvasTexture(c));
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="#fff"/><circle cx="32" cy="32" r="20" fill="${color}"/></svg>`;
+    return (DOTS[color] = new THREE.TextureLoader().load(`data:image/svg+xml,${encodeURIComponent(svg)}`));
   }
   function makeDot(color, size) {
-    const c = document.createElement("canvas"); c.width = c.height = 64;
-    const x = c.getContext("2d"), g = x.createRadialGradient(32, 32, 2, 32, 32, 30);
-    g.addColorStop(0, "#ffffff"); g.addColorStop(0.25, color); g.addColorStop(0.55, color + "aa"); g.addColorStop(1, color + "00");
-    x.fillStyle = g; x.fillRect(0, 0, 64, 64);
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: true, depthWrite: false, transparent: true }));
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(color), depthTest: true, depthWrite: false, transparent: true }));
     s.scale.set(size, size, 1); return s;
   }
+  function siteColor(site) { return site.group === "history" ? "#d97732" : "#4da8ff"; }
 
   function featherMask(inner = 0.72) {
     const c = document.createElement("canvas"); c.width = c.height = 256;
@@ -226,16 +220,19 @@
     const north = pos(Math.min(lat + 0.5, 89.99), lon, 1).sub(pos(lat, lon, 1)).normalize();
     G.camera.position.copy(p); G.camera.up.copy(north); G.camera.lookAt(0, 0, 0);
     const near = Math.max(0.0005, (dist - 1) * 0.2); if (Math.abs(G.camera.near - near) > 1e-4) { G.camera.near = near; G.camera.updateProjectionMatrix(); }
-    for (const m of G.markers) { const s = 0.018 * Math.min(1, (dist - 1) * 1.6 + 0.08) * (m.site.id === G.selected ? 1.6 : 1); m.sprite.scale.set(s, s, 1); }
-    if (G.pin) { const s = 0.016 * Math.min(1, (dist - 1) * 1.6 + 0.08); G.pin.scale.set(s, s, 1); }
+    for (const m of G.markers) { const s = markerWorldSize(m.sprite, m.site.id === G.selected ? 12 : 10); m.sprite.scale.set(s, s, 1); }
+    if (G.pin) { const s = markerWorldSize(G.pin, 11); G.pin.scale.set(s, s, 1); }
   }
 
   function flyTo(lat, lon, dist = G.cam.dist, ms = 1400, arc = 0, done) { G.anim = { t0: performance.now(), ms, from: { ...G.cam }, to: { lat: Math.max(-89.9, Math.min(89.9, lat)), lon, dist }, arc, done }; }
   // Camera position that puts (lat, lon) in the middle of the screen with the pole "above" it.
   function focus(lat, lon, dist = 1.35) { flyTo(lat - 2, lon, dist); }
+  function markerWorldSize(sprite, pixels) {
+    return 2 * G.camera.position.distanceTo(sprite.position) * Math.tan(G.camera.fov * D / 2) * pixels / (G.el.clientHeight || 1);
+  }
   function setSites(sites) {
     for (const s of sites) {
-      const sprite = makeDot(s.group === "history" ? "#d9d5cc" : "#ffbf47", 0.02); sprite.position.copy(pos(s.lat, s.lon, 1.003)); G.scene.add(sprite);
+      const sprite = makeDot(siteColor(s), 0.012); sprite.position.copy(pos(s.lat, s.lon, 1.003)); G.scene.add(sprite);
       const label = addLabel(pos(s.lat, s.lon, 1.003), s.name.split(" (")[0], "site");
       label.d.onclick = () => G.handlers.site(s);
       G.markers.push({ site: s, sprite, label });
@@ -243,13 +240,19 @@
   }
   function select(id) {
     G.selected = id;
-    for (const m of G.markers) { m.sprite.material.map = dotTexture(m.site.id === id ? "#4da8ff" : m.site.group === "history" ? "#d9d5cc" : "#ffbf47"); m.sprite.material.needsUpdate = true; m.label.d.classList.toggle("sel", m.site.id === id); }
+    for (const m of G.markers) { m.sprite.material.map = dotTexture(siteColor(m.site)); m.sprite.material.needsUpdate = true; m.label.d.classList.toggle("sel", m.site.id === id); }
   }
-  function setPin(lat, lon) {
+  function setPin(lat, lon, name) {
     if (G.pin) { G.scene.remove(G.pin); G.pin = null; }
+    if (G.pinLabel) {
+      const i = G.labels.indexOf(G.pinLabel); if (i >= 0) G.labels.splice(i, 1);
+      G.pinLabel.d.remove(); G.pinLabel = null;
+    }
     if (lat == null) return;
-    G.pin = makeDot("#ffffff", 0.016); G.pin.position.copy(pos(lat, lon, 1.004)); G.scene.add(G.pin);
+    G.pin = makeDot("#ff4d4d", 0.009); G.pin.position.copy(pos(lat, lon, 1.004)); G.scene.add(G.pin);
+    G.pinLabel = addLabel(pos(lat, lon, 1.004), name || "", "site custom-site-label");
   }
+  function setPinName(name) { if (G.pinLabel) G.pinLabel.d.textContent = name; }
   function setOverlay(canvas) {
     if (!canvas) { G.overlay.visible = false; return; }
     if (!G.overlayMat.map || G.overlayMat.map.image !== canvas) { if (G.overlayMat.map) G.overlayMat.map.dispose(); G.overlayMat.map = new THREE.CanvasTexture(canvas); G.overlayMat.needsUpdate = true; }
@@ -281,5 +284,5 @@
     if (G.cam.dist < 2.5) flyTo(-18, lon0, 3.1, 1600); else G.cam = { lat: -18, lon: lon0, dist: 3.1 };
   }
   function toPole() { G.spin = false; G.ready.then(() => flyTo(-89.5, 0, 1.62, 3200, 0.35)); }
-  root.Globe = { setRelief, showcase, toPole, setInset, init, setSites, select, setPin, setOverlay, setSun, flyTo, focus, intro, resize, on: (k, f) => (G.handlers[k] = f), _G: G };
+  root.Globe = { setRelief, showcase, toPole, setInset, init, setSites, select, setPin, setPinName, setOverlay, setSun, flyTo, focus, intro, resize, on: (k, f) => (G.handlers[k] = f), _G: G };
 })(window);

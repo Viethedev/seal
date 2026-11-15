@@ -82,6 +82,9 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .site-list small { color: var(--muted); display: block; }
 .info-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
 .info-card h2 { display: flex; align-items: center; gap: 8px; }
+.info-card h2 .editable-name { cursor: text; border-bottom: 1px dashed var(--hair-2); }
+.info-card h2 .editable-name:hover { border-bottom-color: var(--dust); }
+.info-card h2 .site-name-input { flex: 1 1 10rem; min-width: 0; font: inherit; }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: .85rem; margin: 10px 0 0; }
 .kv dt { color: var(--muted); } .kv dd { margin: 0; }
 .tag { font-size: .7rem; color: var(--muted); border: 1px solid var(--line); padding: 1px 8px; border-radius: 999px; font-weight: 400; }
@@ -193,6 +196,7 @@ table.trade tr.pareto td { font-weight: 600; }
 .glabel { position: absolute; left: 0; top: 0; white-space: nowrap; font-size: 11px; pointer-events: none; }
 .glabel.grid { color: rgba(255,255,255,.55); text-shadow: 0 0 3px #000; margin: -6px 0 0 4px; }
 .glabel.site { pointer-events: auto; cursor: pointer; color: #fff; background: rgba(10,10,11,.7); border: 1px solid var(--line); padding: 1px 7px; border-radius: 8px; margin: -9px 0 0 12px; font-size: 11px; }
+.glabel.site.custom-site-label { pointer-events: none; cursor: default; z-index: 501; }
 .glabel.site:hover { border-color: var(--sun); }
 .glabel.site.sel { border-color: var(--earth); color: #cfe7ff; }
 .hud-btn { position: absolute; top: 12px; right: 12px; z-index: 500; background: rgba(10,10,11,.6); color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: .8rem; }

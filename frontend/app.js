@@ -52,7 +52,43 @@ function setPinSelected(id) { Globe.select(id); }
 // ---------- selection & info panel ----------
 const fmtLat = (v) => `${Math.abs(v).toFixed(3)}°${v < 0 ? "S" : "N"}`;
 const fmtLon = (v) => `${Math.abs(v).toFixed(3)}°${v < 0 ? "W" : "E"}`;
+const siteDisplayName = (site) => site.region === "Custom" ? site.name : site.name.split(" (")[0];
+const escapeHTML = (value) => String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const GROUPS = [["artemis", "Artemis III candidate regions"], ["history", "Past landings"]];
+function bindCustomName(nameplate, site) {
+  if (site.region !== "Custom") return;
+  nameplate.classList.add("editable-name");
+  nameplate.title = "Double-click to rename";
+  nameplate.ondblclick = () => {
+    const input = document.createElement("input");
+    input.className = "site-name-input";
+    input.type = "text";
+    input.value = site.name;
+    input.maxLength = 80;
+    input.setAttribute("aria-label", "Custom point name");
+    nameplate.replaceWith(input);
+    input.focus(); input.select();
+    let finished = false;
+    const finish = (save) => {
+      if (finished) return;
+      finished = true;
+      const name = input.value.trim();
+      if (save && name) site.name = name;
+      Globe.setPinName(site.name);
+      const updated = document.createElement("span");
+      updated.id = "site-name"; updated.textContent = site.name;
+      input.replaceWith(updated);
+      bindCustomName(updated, site);
+      if (cal.site && cal.site.id === site.id) $("cal-title").textContent = siteDisplayName(site);
+      renderCompare();
+    };
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); finish(true); }
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finish(false); }
+    });
+    input.addEventListener("blur", () => finish(true));
+  };
+}
 function emptyInfoHTML() {
   return `<h2>Choose a landing site</h2>
     <p class="muted">Pick a site below, click anywhere on the Moon, or type coordinates.</p>
@@ -112,7 +148,7 @@ function showInfo(site, extraRows) {
   $("info").classList.remove("empty");
   $("info").innerHTML = `<button class="back" id="back-list">← All sites</button>
     <div class="info-card">
-      <h2>${site.name} ${site.region === "Custom" ? '<span class="tag">your pin</span>' : site.group === "history" ? `<span class="tag">landed ${site.landed.slice(0, 10)}</span>` : '<span class="tag">Artemis III region</span>'}</h2>
+      <h2><span id="site-name">${escapeHTML(site.name)}</span> ${site.region === "Custom" ? '<span class="tag">your pin</span>' : site.group === "history" ? `<span class="tag">landed ${site.landed.slice(0, 10)}</span>` : '<span class="tag">Artemis III region</span>'}</h2>
       ${site.note ? `<p class="muted" style="margin:6px 0 0">${site.note}</p>` : ""}
       <dl class="kv">
         <dt>Latitude</dt><dd>${fmtLat(site.lat)}</dd>
@@ -124,6 +160,7 @@ function showInfo(site, extraRows) {
       ${site.lat > -79 ? `<p class="muted small-print">Away from the south pole the horizon is treated as smooth (no hill data here yet).</p>` : ""}
       ${bestSpotHTML(site)}
     </div>`;
+  bindCustomName($("site-name"), site);
   $("back-list").onclick = resetPanel;
   const bs = $("use-best");
   if (bs) bs.onclick = () => { const b = site.light.best; selectCustom(b.lat, b.lon, `Best lit spot near ${site.name.split(" (")[0]}`); Globe.flyTo(b.lat, b.lon, 1.3, 1200); };
@@ -143,10 +180,10 @@ function selectSite(site, fly) {
 }
 
 function selectCustom(lat, lon, name) {
-  const site = { id: `custom_${lat.toFixed(4)}_${lon.toFixed(4)}`, name: name || "Dropped pin", region: "Custom", lat, lon, note: "", source: "" };
+  const site = { id: `custom_${lat.toFixed(4)}_${lon.toFixed(4)}`, name: name || `${fmtLat(lat)}, ${fmtLon(lon)}`, region: "Custom", lat, lon, note: "", source: "" };
   state.current = site;
   setPinSelected(null);
-  Globe.setPin(lat, lon);
+  Globe.setPin(lat, lon, site.name);
   const nearest = state.sites.map((s) => [s, distKm([lat, lon], [s.lat, s.lon])]).sort((a, b) => a[1] - b[1])[0];
   showInfo(site, nearest ? `<dt>Nearest site</dt><dd>${nearest[0].name.split(" (")[0]} · ${nearest[1].toFixed(1)} km</dd>` : "");
   setDefaultDates(); renderCompare();
@@ -178,7 +215,7 @@ function renderCompare() {
   $("run-compare").disabled = n < 2;
   $("run-compare").className = n >= 2 ? "primary small" : "secondary small";
   $("compare-hint").textContent = n === 1 ? "Now pick another site (list or Moon) and press + Compare again." : n >= 2 ? `${n} sites ready. Press Compare now to see them side by side.` : "";
-  $("compare-chips").innerHTML = state.compare.map((s, i) => `<span class="chip" data-i="${i}" title="Remove">${s.name.split(" (")[0]} ✕</span>`).join(" ");
+  $("compare-chips").innerHTML = state.compare.map((s, i) => `<span class="chip" data-i="${i}" title="Remove">${escapeHTML(siteDisplayName(s))} ✕</span>`).join(" ");
   $("compare-chips").querySelectorAll(".chip").forEach((c) => (c.onclick = () => { state.compare.splice(+c.dataset.i, 1); renderCompare(); }));
 }
 
@@ -245,14 +282,14 @@ function renderResults(results) {
   } else {
     $("verdict").hidden = true;
     $("summary").innerHTML = `<table class="cmp"><thead><tr><th>Site</th><th>Operating days</th><th>Earthset in</th><th>Sunlit %</th><th>Earth %</th><th>First night</th><th>Battery to survive</th></tr></thead><tbody>${
-      results.map((r) => `<tr><td>${r.site.name.split(" (")[0]}</td><td>${(() => { const b = SEAL.batteryPlan(r.site, r.series[0].t, power()); if (!b || !b.landed_in_sun) return "dark at landing"; const pw = power(); return pw.battery_wh > 0 ? dfmt(b.yours_days, b.yours_capped) : dfmt(b.solar_days, b.solar_capped); })()}</td><td>${r.summary.next_earthset ? fmtN((Date.parse(r.summary.next_earthset) - Date.parse(r.series[0].t)) / 864e5) + " d" : "-"}</td><td>${fmtN(r.summary.sunlit_pct, 0)}</td><td>${fmtN(r.summary.earth_visible_pct, 0)}</td>${(() => { const b = SEAL.batteryPlan(r.site, r.series[0].t, power()); return b && b.landed_in_sun && b.first_night_h ? `<td>${b.first_night_h} h</td><td>${(b.need_wh / 1000).toFixed(1)} kWh</td>` : "<td>-</td><td>-</td>"; })()}</tr>`).join("")}</tbody></table>`;
+      results.map((r) => `<tr><td>${escapeHTML(siteDisplayName(r.site))}</td><td>${(() => { const b = SEAL.batteryPlan(r.site, r.series[0].t, power()); if (!b || !b.landed_in_sun) return "dark at landing"; const pw = power(); return pw.battery_wh > 0 ? dfmt(b.yours_days, b.yours_capped) : dfmt(b.solar_days, b.solar_capped); })()}</td><td>${r.summary.next_earthset ? fmtN((Date.parse(r.summary.next_earthset) - Date.parse(r.series[0].t)) / 864e5) + " d" : "-"}</td><td>${fmtN(r.summary.sunlit_pct, 0)}</td><td>${fmtN(r.summary.earth_visible_pct, 0)}</td>${(() => { const b = SEAL.batteryPlan(r.site, r.series[0].t, power()); return b && b.landed_in_sun && b.first_night_h ? `<td>${b.first_night_h} h</td><td>${(b.need_wh / 1000).toFixed(1)} kWh</td>` : "<td>-</td><td>-</td>"; })()}</tr>`).join("")}</tbody></table>`;
   }
 
   const pal = ["#ffbf47", "#4da8ff", "#3ccf8e", "#ff6b5a", "#b98cff", "#e6e6e6"];
   const pts = (r, k) => { const t0 = Date.parse(r.series[0].t); return r.series.map((s) => ({ x: (Date.parse(s.t) - t0) / 864e5, y: 100 * s[k] })); };
   const ds = [];
   results.forEach((r, i) => {
-    const n = multi ? `${r.site.name.split(" (")[0]} · ` : "";
+    const n = multi ? `${siteDisplayName(r.site)} · ` : "";
     ds.push({ label: `${n}Sun`, data: pts(r, "sun_frac"), borderColor: multi ? pal[i] : "#ffbf47", backgroundColor: multi ? "transparent" : "rgba(255,191,71,.12)", fill: !multi, stepped: true, pointRadius: 0, borderWidth: 2 });
     ds.push({ label: `${n}Earth`, data: pts(r, "earth_frac"), borderColor: multi ? pal[i] : "#4da8ff", borderDash: [6, 4], stepped: true, pointRadius: 0, borderWidth: 2 });
   });
@@ -325,7 +362,7 @@ function openCalendar(site) {
   const r = SEAL.range(), base = $("start").value ? new Date($("start").value + "Z") : new Date();
   const b = base < new Date(r.start) || base > new Date(r.end) ? new Date(r.start) : base;
   cal.month = new Date(Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), 1));
-  $("cal-title").textContent = site.name.split(" (")[0];
+  $("cal-title").textContent = siteDisplayName(site);
   $("cal-modal").hidden = false; renderCalendar();
 }
 function renderCalendar() {
