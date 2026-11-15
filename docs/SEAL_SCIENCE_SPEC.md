@@ -1,3 +1,5 @@
+> **Note (15 Nov 2026):** this is the original design spec. The website as built (`frontend/engine.js`) differs: terrain is the 240 m LOLA grid (80 to 90°S, smooth Moon elsewhere), the analysis time step defaults to 1 hour (6 and 12 hours optional), horizons use 720 directions sampled every 120 m to 10 km then every 250 m to 150 km, and any lunar coordinate can be analysed. The README describes the model as built.
+
 # SEAL - Science Core Spec (v1)
 
 Owner: Jacob · For: Viethedev (integration) + AI code generation

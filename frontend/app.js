@@ -123,7 +123,7 @@ function renderSiteList() {
   if (f) f.onsubmit = (e) => {
     e.preventDefault();
     const lat = parseCoord($("in-lat").value, "N", "S"), lon = parseCoord($("in-lon").value, "E", "W");
-    const err = !isFinite(lat) || lat < -90 || lat > 90 ? "Latitude must be a number from -90 to 90." : !isFinite(lon) || lon < -180 || lon > 360 ? "Longitude must be a number from -180 to 180." : "";
+    const err = !isFinite(lat) || lat < -90 || lat > 90 ? "Latitude must be a number from -90 to 90." : !isFinite(lon) || lon < -180 || lon > 360 ? "Longitude must be a number from -180 to 360 (east positive)." : "";
     $("coord-err").hidden = !err; $("coord-err").textContent = err;
     if (err) return;
     const L = lon > 180 ? lon - 360 : lon;
@@ -138,10 +138,24 @@ function bestSpotHTML(site) {
   const b = L.best, gain = b.sun - L.centre_sun;
   if (gain < 15) return `<p class="muted small-print">In 2025 this pin gets Sun ${L.centre_sun}% of the time and Earth ${L.centre_earth}% (LOLA terrain).</p>`;
   return `<div class="best-spot">
-      <p><strong>${L.centre_sun < 5 ? "This pin sits in crater shadow." : "A better lit spot is close by."}</strong> The pin marks the centre of NASA's region. In 2025 it gets Sun ${L.centre_sun}% of the time and Earth ${L.centre_earth}%.</p>
-      <p>${b.km} km away, at ${fmtLat(b.lat)}, ${fmtLon(b.lon)}, a ridge gets Sun ${b.sun}% and Earth ${b.earth}%. Where exactly you land inside a region decides whether the mission works.</p>
+      <p><strong>${L.centre_sun < 5 ? "This pin sits in crater shadow." : "A better lit spot is close by."}</strong> The pin is our reference point inside NASA's region (${site.point_type || "reference point"}). In 2025 it gets Sun ${L.centre_sun}% of the time and Earth ${L.centre_earth}%.</p>
+      <p>${b.km} km away, at ${fmtLat(b.lat)}, ${fmtLon(b.lon)}, a ridge gets Sun ${b.sun}% and Earth ${b.earth}%. Where exactly you land inside a region decides whether the mission works (240 m terrain, a screening result, not a certified landing study).</p>
       <button type="button" id="use-best" class="secondary">Go to the best lit spot</button>
     </div>`;
+}
+// Per-site terrain coverage: full LOLA skyline, partial, or smooth Moon only
+function terrainCov(site) { if (!SEAL.terrain) return null; try { return SEAL.horizonMask(site.lat, site.lon, +($("height")?.value || 2)).coverage; } catch { return null; } }
+function terrainLabel(site) {
+  const c = terrainCov(site);
+  if (c == null) return "flat horizon (terrain not loaded)";
+  return c >= 0.99 ? "LOLA, full skyline" : c > 0 ? `LOLA, partial (${Math.round(c * 100)}% of directions)` : "smooth Moon only";
+}
+function terrainNote(site) {
+  const c = terrainCov(site);
+  if (c == null || c >= 0.99) return "";
+  return c > 0
+    ? `<p class="muted small-print">Part of this skyline runs off the LOLA terrain grid (80 to 90°S); those directions use a smooth Moon, so hills there are not included.</p>`
+    : `<p class="muted small-print">No LOLA terrain here (it covers 80 to 90°S). SEAL uses a smooth Moon: curvature is included, local hills are not.</p>`;
 }
 function showInfo(site, extraRows) {
   const pole = distKm([site.lat, site.lon], [-90, 0]);
@@ -155,9 +169,10 @@ function showInfo(site, extraRows) {
         <dt>Longitude</dt><dd>${fmtLon(site.lon)}</dd>
         ${site.lat < -60 ? `<dt>From south pole</dt><dd>${pole.toFixed(1)} km</dd>` : ""}
         ${extraRows || ""}
+        <dt>Terrain</dt><dd>${terrainLabel(site)}</dd>
       </dl>
       ${site.landed && site.landed < "2025" ? `<p class="muted small-print">SEAL's Sun and Earth data covers 2025 to 2028, so this shows what landing here on those dates would be like.</p>` : ""}
-      ${site.lat > -79 ? `<p class="muted small-print">Away from the south pole the horizon is treated as smooth (no hill data here yet).</p>` : ""}
+      ${terrainNote(site)}
       ${bestSpotHTML(site)}
     </div>`;
   bindCustomName($("site-name"), site);
@@ -370,7 +385,8 @@ function planHTML(site, landISO, short) {
         ? `<i class="disc batt"></i><b>Your ${p.battery_wh / 1000} kWh battery</b> survives ${b.yours_capped ? "every" : b.yours_nights} night${b.yours_nights === 1 && !b.yours_capped ? "" : "s"}${b.yours_killer ? `, then a ${b.yours_killer.len} h night drains it` : ""}: <b>${dfmt(b.yours_days, b.yours_capped)} days</b> of operation.`
         : `<i class="disc batt"></i><b>Your ${p.battery_wh / 1000} kWh battery</b> keeps you running ${((b.yours_days - b.solar_days) * 24).toFixed(0)} h into the first night, then runs out: <b>${dfmt(b.yours_days, b.yours_capped)} days</b> total.`)
     : "";
-  return `<p><i class="disc sun"></i><b>Solar only: ${dfmt(b.solar_days, b.solar_capped)} days</b> of operation${b.solar_capped ? "" : ", until sunset"}. Earth in view ${b.earth_pct.toFixed(0)}% of the time.</p>
+  return `<p class="muted small-print">Screening estimate: assumes the panels fully recharge the battery whenever any Sun is up. Panel size, angle and heaters are not modelled. Radio contact is shown separately and does not end the mission.</p>
+    <p><i class="disc sun"></i><b>Solar only: ${dfmt(b.solar_days, b.solar_capped)} days</b> of operation${b.solar_capped ? "" : ", until sunset"}. Earth in view ${b.earth_pct.toFixed(0)}% of the time.</p>
     ${nightD ? `<p><i class="disc night"></i>Then <b>${b.first_night_h} h (${nightD} days) of darkness</b>.</p>
     <p><i class="disc batt"></i>To survive that night at ${p.night_w} W you need <b>≈${(b.need_wh / 1000).toFixed(1)} kWh</b> (≈${Math.round(b.need_wh / 150)} kg of Li-ion, 80% usable). The panels recharge it every sunrise, so it keeps going ${b.with_need_killer ? `until a <b>longer night (${b.with_need_killer.len} h, ${(b.with_need_killer.len / 24).toFixed(1)} days)</b> arrives on day ${(b.with_need_killer.startH / 24).toFixed(0)}: <b>${dfmt(b.with_need_days, b.with_need_capped)} days</b> total` : `for <b>${dfmt(b.with_need_days, b.with_need_capped)} days</b> or more`}.</p>` : `<p>No sunset in the next 120 days here.</p>`}
     ${b.year_longest_night_h ? `<p><b>To survive every night for a full year,</b> the longest night is ${b.year_longest_night_h} h (${(b.year_longest_night_h / 24).toFixed(1)} days, around day ${b.year_longest_night_day.toFixed(0)}), so you need <b>≈${(b.need_year_wh / 1000).toFixed(1)} kWh</b> (≈${Math.round(b.need_year_wh / 150)} kg). With a battery that big, darkness stops being the limit; battery wear and cold become the limits instead (only ~13 charge cycles a year, which is gentle for Li-ion).${b.year_full ? "" : " (Data ends before a full year.)"}</p>` : ""}

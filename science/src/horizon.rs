@@ -89,7 +89,9 @@ fn walk_distances(cfg: &MaskConfig) -> Vec<f64> {
 }
 
 /// Compute the horizon mask at (lat, lon) for an observer `observer_height_m`
-/// metres above the ground. Samples outside the terrain dataset are skipped.
+/// metres above the ground. Samples outside the terrain dataset are skipped; a direction with no
+/// terrain at all falls back to a smooth Moon at the observer's ground level (the horizon dip of a
+/// sphere seen from `observer_height_m` up, about -0.09 deg for 2 m), never -90 deg.
 pub fn horizon_mask<T: Terrain>(
     terrain: &T,
     lat_deg: f64,
@@ -98,7 +100,11 @@ pub fn horizon_mask<T: Terrain>(
     cfg: &MaskConfig,
 ) -> HorizonMask {
     let ground = terrain.height_m(lat_deg, lon_deg).unwrap_or(0.0);
-    let s: Vec3 = site_vector(lat_deg, lon_deg, ground + observer_height_m);
+    let rg = R_MOON_KM * 1000.0 + ground;
+    let dip = -(rg / (rg + observer_height_m.max(0.0))).acos().to_degrees();
+    // azimuths (and the local east/north frame) are undefined exactly at the pole: use a point 300 m off it
+    let lat_walk = lat_deg.max(-89.99).min(89.99);
+    let s: Vec3 = site_vector(lat_walk, lon_deg, ground + observer_height_m);
     let frame = local_frame(s);
     let dists = walk_distances(cfg);
     let n = (360.0 / cfg.az_step_deg).round() as usize;
@@ -106,9 +112,9 @@ pub fn horizon_mask<T: Terrain>(
     let elevation_deg = (0..n)
         .map(|k| {
             let az = k as f64 * cfg.az_step_deg;
-            let mut best = -90.0_f64;
+            let mut best = dip;
             for &d in &dists {
-                let (la, lo) = destination(lat_deg, lon_deg, az, d);
+                let (la, lo) = destination(lat_walk, lon_deg, az, d);
                 if let Some(z) = terrain.height_m(la, lo) {
                     let p = unit_from_latlon(la, lo).scale(R_MOON_KM + z / 1000.0);
                     let e = p.sub(s).unit().dot(frame.up).clamp(-1.0, 1.0).asin();

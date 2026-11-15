@@ -1,28 +1,5 @@
 [
   {
-    "id": "mons-mouton-im2",
-    "name": "IM-2 Athena landing (Mons Mouton)",
-    "region": "Mons Mouton",
-    "lat": -84.7906,
-    "lon": 29.1957,
-    "point_type": "exact landing point",
-    "validated": true,
-    "note": "Real mission benchmark. Tipped over on landing; planned ~10-day mission to local sunset.",
-    "source": "https://lroc.im-ldi.com/images/1408",
-    "group": "artemis",
-    "light": {
-      "centre_sun": 47.2,
-      "centre_earth": 79.6,
-      "best": {
-        "lat": -84.8066,
-        "lon": 28.8783,
-        "sun": 50.4,
-        "earth": 76.9,
-        "km": 1
-      }
-    }
-  },
-  {
     "id": "mons-mouton",
     "name": "Mons Mouton (summit / plateau)",
     "region": "Mons Mouton / Mons Mouton Plateau",
@@ -159,6 +136,30 @@
         "km": 2.8
       }
     }
+  },
+  {
+    "id": "mons-mouton-im2",
+    "name": "IM-2 Athena landing (Mons Mouton)",
+    "region": "Mons Mouton",
+    "lat": -84.7906,
+    "lon": 29.1957,
+    "point_type": "exact landing point",
+    "validated": true,
+    "note": "Real mission benchmark. Tipped over on landing; planned ~10-day mission to local sunset.",
+    "source": "https://lroc.im-ldi.com/images/1408",
+    "group": "history",
+    "light": {
+      "centre_sun": 47.2,
+      "centre_earth": 79.6,
+      "best": {
+        "lat": -84.8066,
+        "lon": 28.8783,
+        "sun": 50.4,
+        "earth": 76.9,
+        "km": 1
+      }
+    },
+    "landed": "2025-03-06T17:28Z"
   },
   {
     "id": "im-1",

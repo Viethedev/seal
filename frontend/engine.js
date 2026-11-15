@@ -76,24 +76,35 @@
     const key = `${lat.toFixed(5)},${lon.toFixed(5)},${obsHeightM}`;
     if (MASKS.has(key)) return MASKS.get(key);
     const N = 720, mask = new Float64Array(N);
-    if (!TERRAIN) { const m = { step: 0.5, el: mask, flat: true, ground_m: 0 }; MASKS.set(key, m); return m; }
-    const g = heightM(lat, lon) ?? 0;
-    const f = frame(lat, lon, (g + obsHeightM) / 1000), steps = [];
+    if (!TERRAIN) { const m = { step: 0.5, el: mask, flat: true, ground_m: 0, coverage: 0 }; MASKS.set(key, m); return m; }
+    // Where we have no terrain, assume the ground continues smooth at the observer's own level:
+    // the horizon is then the dip of a sphere seen from obsHeightM up (about -0.09 deg for 2 m).
+    const g0 = heightM(lat, lon), g = g0 ?? 0, Rg = R_KM * 1000 + g;
+    const dip = -Math.acos(Rg / (Rg + Math.max(0, obsHeightM))) / D;
+    if (g0 == null) { // site outside the LOLA grid: smooth Moon
+      const m = { step: 0.5, el: mask.fill(dip), flat: true, ground_m: 0, coverage: 0 }; MASKS.set(key, m); return m;
+    }
+    // Azimuths and the local frame are undefined exactly at the pole, so points within ~300 m of it
+    // are analysed at 89.99 S (same as the Rust reference).
+    const la0 = Math.max(lat, -89.99);
+    const f = frame(la0, lon, (g + obsHeightM) / 1000), steps = [];
+    let complete = 0;
     for (let s = 0.12; s <= 10; s += 0.12) steps.push(s);
     for (let s = 10.25; s <= 150; s += 0.25) steps.push(s);
     for (let i = 0; i < N; i++) {
-      let best = -90;
+      let best = dip, whole = true;
       for (const s of steps) {
-        const [la2, lo2] = destination(lat, lon, i * 0.5, s);
-        if (la2 > -79.9) break;
-        const h = heightM(la2, lo2); if (h == null) continue;
+        const [la2, lo2] = destination(la0, lon, i * 0.5, s);
+        if (la2 > -79.9) { whole = false; break; }
+        const h = heightM(la2, lo2); if (h == null) { whole = false; continue; }
         const p = frame(la2, lo2, h / 1000).s, r = sub(p, f.s);
         const el = Math.atan2(dot(r, f.up), Math.hypot(dot(r, f.e), dot(r, f.n))) / D;
         if (el > best) best = el;
       }
-      mask[i] = best;
+      mask[i] = best; if (whole) complete++;
     }
-    const m = { step: 0.5, el: mask, flat: false, ground_m: g };
+    // coverage: share of skyline directions traced on LOLA terrain all the way out to 150 km
+    const m = { step: 0.5, el: mask, flat: false, ground_m: g, coverage: complete / N };
     MASKS.set(key, m); return m;
   }
   function maskAt(m, az) {
@@ -107,9 +118,13 @@
     return 1 - (Math.acos(x) - x * Math.sqrt(1 - x * x)) / Math.PI;
   }
   function metrics(series) {
-    const n = series.length, dtH = n > 1 ? (Date.parse(series[1].t) - Date.parse(series[0].t)) / 3.6e6 : 0;
+    // Sample i stands for the time until sample i+1 (the last step may be shorter than the others).
+    const n = series.length, T = series.map((s) => Date.parse(s.t));
+    const dur = n > 1 ? T.slice(0, n - 1).map((t, i) => (T[i + 1] - t) / 3.6e6) : [0];
+    const iv = n > 1 ? series.slice(0, n - 1) : series, totalH = dur.reduce((a, b) => a + b, 0) || 1;
     const lit = (s) => s.sun_frac > 0, contact = (s) => s.earth_frac >= 0.5;
-    const longest = (p) => { let b = 0, c = 0; for (const s of series) { if (p(s)) { c++; b = Math.max(b, c); } else c = 0; } return b; };
+    const hours = (p) => iv.reduce((a, s, i) => a + (p(s) ? dur[i] : 0), 0);
+    const longest = (p) => { let b = 0, c = 0; iv.forEach((s, i) => { if (p(s)) { c += dur[i]; b = Math.max(b, c); } else c = 0; }); return b; };
     const fall = (p) => { for (let i = 1; i < n; i++) if (p(series[i - 1]) && !p(series[i])) return series[i].t; return null; };
     const sunset = fall(lit), earthset = fall(contact);
     let usable = 0, past = false;
@@ -117,9 +132,9 @@
       const ends = [sunset, earthset].filter(Boolean).map(Date.parse), t0 = Date.parse(series[0].t);
       if (ends.length) usable = (Math.min(...ends) - t0) / 864e5; else { usable = (Date.parse(series[n - 1].t) - t0) / 864e5; past = true; }
     }
-    const nl = series.filter(lit).length, ne = series.filter(contact).length;
-    return { sunlit_pct: 100 * nl / n, sunlit_hours: nl * dtH, longest_dark_hours: longest((s) => !lit(s)) * dtH,
-      earth_visible_pct: 100 * ne / n, earth_visible_hours: ne * dtH, longest_blackout_hours: longest((s) => !contact(s)) * dtH,
+    const hl = hours(lit), he = hours(contact);
+    return { sunlit_pct: 100 * hl / totalH, sunlit_hours: hl, longest_dark_hours: longest((s) => !lit(s)),
+      earth_visible_pct: 100 * he / totalH, earth_visible_hours: he, longest_blackout_hours: longest((s) => !contact(s)),
       next_sunset: sunset, next_earthset: earthset, usable_mission_days: usable, mission_runs_past_range: past };
   }
 
@@ -131,16 +146,18 @@
     const step = Math.max(10, step_minutes) * 60e3;
     if ((t1 - t0) / step > 20000) throw new Error("too many time steps, use a larger step or shorter range");
     const mask = horizonMask(site.lat, site.lon, observer_height_m);
-    const f = frame(site.lat, site.lon, (mask.ground_m + observer_height_m) / 1000);
-    const series = [];
-    for (let t = t0; t <= t1; t += step) {
+    const f = frame(Math.max(site.lat, -89.99), site.lon, (mask.ground_m + observer_height_m) / 1000);
+    const series = [], times = [];
+    for (let t = t0; t < t1; t += step) times.push(t);
+    times.push(t1); // always end exactly at the requested end, so a final short step is counted
+    for (const t of times) {
       const s = azEl(f, vecAt(EPH.sun, t)), e = azEl(f, vecAt(EPH.earth, t));
       const hs = maskAt(mask, s.az), he = maskAt(mask, e.az);
       series.push({ t: new Date(t).toISOString().replace(".000", ""),
         sun_az: +s.az.toFixed(4), sun_el: +s.el.toFixed(4), horizon_at_sun: +hs.toFixed(4), sun_frac: visibleFraction(s.el, hs, Math.asin(R_SUN / s.dist) / D),
         earth_az: +e.az.toFixed(4), earth_el: +e.el.toFixed(4), horizon_at_earth: +he.toFixed(4), earth_frac: visibleFraction(e.el, he, Math.asin(R_EARTH / e.dist) / D) });
     }
-    return { site, terrain_model: mask.flat ? "flat (LOLA terrain pending)" : "LRO LOLA", horizon: { az_step_deg: mask.step, elevation_deg: Array.from(mask.el, (v) => +v.toFixed(3)), ground_m: mask.ground_m },
+    return { site, terrain_model: mask.flat ? "smooth Moon (no LOLA terrain here)" : mask.coverage >= 0.99 ? "LRO LOLA" : "LRO LOLA, partial", terrain_coverage: mask.coverage, horizon: { az_step_deg: mask.step, elevation_deg: Array.from(mask.el, (v) => +v.toFixed(3)), ground_m: mask.ground_m },
       summary: metrics(series), series };
   }
 
