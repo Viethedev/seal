@@ -1,7 +1,7 @@
 # SEAL website (fully online, no server needed)
 
-Plain HTML/CSS/JS. Upload this whole folder to any static web host (e.g. the free Space Apps domain + hosting).
-Leaflet (map) and Chart.js (charts) load from cdnjs.
+Plain HTML/CSS/JS. Published to GitHub Pages by `.github/workflows/pages.yml`; works on any static web host.
+three.js (3D Moon) and Chart.js (charts) load from cdnjs.
 
 Flow: landing page → pick a site or drop a pin → **landing calendar pops up** (Google-Flights style: each date shows days of operation, green/yellow/orange; battery + night-power inputs; click a date for the power plan; **trade-off table** of the best landing per lunar day vs battery needed to survive the first night) →
 then: landing page → **Locate the place** → interactive map of the lunar south pole.
@@ -10,12 +10,12 @@ Click a site marker or **anywhere** → info panel → dates → **Analyse** →
 All maths runs in the visitor's browser (`engine.js`, a JS mirror of `science/`):
 - `data/ephemeris.json`, Sun & Earth Moon-fixed positions every 6 h, 2025-2028, built from NASA JPL Horizons
   (DE441, MEAN_ME). Interpolated values match fresh Horizons az/el to < 0.00001° (IM-2, Haworth, de Gerlache, hourly, Mar 2025).
-- `data/terrain.json` + `data/terrain.bin`, *optional* LOLA height grid (from lmaoxd's terrain reader, format in
-  `docs/TERRAIN_FORMAT.md`). Without it the horizon is flat; with it SEAL traces the real skyline (720 directions, 150 km).
-- `data/sites.json`, the 7 Artemis presets (copy of `docs/sites.json`).
+- `data/terrain.json` + `data/terrain.bin`, LOLA height grid, 240 m, 80 to 90°S (from lmaoxd's exporter, `science/terrain_export/`,
+  format in `docs/TERRAIN_FORMAT.md`). SEAL traces the real skyline (720 directions, 150 km); outside the grid the horizon is flat.
+- `data/sites.json`, 7 Artemis presets plus past landings (copy of `docs/sites.json`). Artemis presets carry their 2025 sunlight and the best lit spot within 5 km (`light`).
 
 Moon: 3D globe (three.js, `globe.js`) with `moon_global.jpg` (LRO WAC global mosaic, NASA Moon Trek) and `south_pole_wac.jpg`
-(LRO WAC south-pole mosaic, ±320 km) blended into the south-pole cap. `south_pole_lola.jpg` is the landing-page background. Lit by the real Sun at the chosen time; Sun-shadow / Earth-visibility overlay on the cap.
+(LRO WAC south-pole mosaic, ±320 km) blended into the south-pole cap. `south_pole_lola.jpg` is the landing-page background. Near the pole the photo is replaced by relief lit live from the LOLA slopes and the real Sun (`reliefImage` in engine.js), plus cast shadows, so all shadows move together.
 Layout: drag the divider between Moon and results; the Time machine stays pinned while the charts scroll.
 Test locally: `python3 -m http.server 8000` in this folder → http://localhost:8000
 
