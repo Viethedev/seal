@@ -71,10 +71,10 @@ Run locally: `cd frontend && python3 -m http.server 8000`, then open http://loca
 
 ## Team and contributions
 
-- **Aksshara Venkateswaran (lmaoxd):** Built the terrain grid that the browser app uses to work out horizons and shadows. Converted NASA's LOLA south-pole elevation model (7600 × 7600 px) into a 240 m/px, 12.8 MB grid, with a terrain.json file describing its origin, pixel size and axis directions. Built in Python (rasterio, numpy). Checked the projection and axis directions against the file's own metadata, and compared spot heights in the export against the source. AI use: Claude helped write the Python export script.
-- **Siddhant Jacob:** to be added.
-- **Viethedev:** to be added.
-- **Jeevika:** to be added.
+- **Aksshara Venkateswaran:** Built the terrain grid that the browser app uses to work out horizons and shadows. Converted NASA's LOLA south-pole elevation model (7600 × 7600 px) into a 240 m/px, 12.8 MB grid, with a terrain.json file describing its origin, pixel size and axis directions. Built in Python (rasterio, numpy). Checked the projection and axis directions against the file's own metadata, and compared spot heights in the export against the source. AI use: Claude helped write the Python export script.
+- **Siddhant Jacob:** Science and validation lead. Defined what SEAL computes (sunlight, Earth contact, battery survival), the power model and its assumptions, and the validation (JPL Horizons answer keys, Shackleton check, regression tests). Directed and reviewed the code and fixed issues from two external reviews. AI use: Claude wrote most of the code and text to his specification; he checked results against NASA data.
+- **Viethedev:** Created the team and repository. Built the new landing page and interface, site icon, globe loading and speed fixes, and set up GitHub Pages hosting; usability testing. Also designed the SEAL mascot for the website. AI use:.
+- **Jeevika:** SEAL mascot in the demo video, demo video and presentation; tested the app as a first-time user. AI use: Kling AI, Google Flow (mascot), Artlist (intro clip), Claude (text); edited in Canva.
 
 ## Use of AI
 
