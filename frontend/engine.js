@@ -356,15 +356,14 @@
     if (!TERRAIN) return Promise.resolve(null);
     const grid = reliefGrid(N, half_m);
     const render = async () => {
+      // One-time slope preparation runs in ~12 ms slices so the page stays responsive;
+      // shading for a new Sun position is fast (tens of ms), so it runs in one go.
       while (grid.preparedRows < N) {
-        prepareReliefRows(grid, grid.preparedRows, Math.min(N, grid.preparedRows + 8));
-        await reliefYield();
+        const t0 = Date.now();
+        while (grid.preparedRows < N && Date.now() - t0 < 12) prepareReliefRows(grid, grid.preparedRows, Math.min(N, grid.preparedRows + 8));
+        if (grid.preparedRows < N) await new Promise((resolve) => setTimeout(resolve, 0));
       }
-      const hat = bodyHat("sun", t).hat;
-      for (let r = 0; r < N; r += 8) {
-        shadeReliefRows(grid, hat, r, Math.min(N, r + 8));
-        await reliefYield();
-      }
+      shadeReliefRows(grid, bodyHat("sun", t).hat, 0, N);
       return grid.out;
     };
     const job = grid.job.then(render, render);
