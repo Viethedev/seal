@@ -577,15 +577,7 @@ function setupSplitter() {
   sp.addEventListener("pointerup", end); sp.addEventListener("pointercancel", end);
   window.addEventListener("resize", () => state.map && apply());
 }
-async function openExplorer() {
-  const locate = $("locate");
-  if (!Globe.isReady()) {
-    locate.textContent = "Loading...";
-    locate.disabled = true;
-    await Globe.whenReady();
-    locate.textContent = "Locate the place";
-    locate.disabled = false;
-  }
+function openExplorer() {
   document.body.classList.remove("is-landing");
   state.applyInset && state.applyInset();
   Globe.toPole();
@@ -621,13 +613,20 @@ function setupTips() {
   document.addEventListener("scroll", hide, true);
 }
 async function boot() {
+  const locate = $("locate");
+  locate.textContent = "Loading...";
+  locate.disabled = true;
   setupTips();
   tidyLegends();
   const j = async (u) => { const r = await fetch(u); if (!r.ok) throw new Error(u + " " + r.status); return r; };
   try {
     const [sites, eph] = await Promise.all([j("data/sites.json").then((r) => r.json()), j("data/ephemeris.json").then((r) => r.json())]);
     state.sites = sites; SEAL.setEphemeris(eph);
-  } catch (e) { $("lead-error").hidden = false; $("lead-error").textContent = "Could not load SEAL data: " + e.message; return; }
+  } catch (e) {
+    $("lead-error").hidden = false; $("lead-error").textContent = "Could not load SEAL data: " + e.message;
+    locate.textContent = "Unavailable";
+    return;
+  }
   try { // optional terrain from lmaoxd's LOLA reader
     const meta = await (await j("data/terrain.json")).json();
     const f = meta.file || "terrain.bin";
@@ -647,6 +646,7 @@ async function boot() {
     $("mission-context").scrollIntoView({ behavior: "smooth", block: "start" });
   };
   setupSplitter(); initMap(); state.applyInset();
+  Globe.whenReady().then(() => { locate.textContent = "Locate the place"; locate.disabled = false; });
   const r0 = SEAL.range(), now0 = Math.min(Math.max(Date.now(), Date.parse(r0.start)), Date.parse(r0.end));
   Globe.showcase(SEAL._vecAt(SEAL.eph.sun, now0)); drawRelief(now0);
   for (const src of ["moon_global.jpg", "south_pole_wac.jpg"]) { const im = new Image(); im.src = src; } // warm the cache
