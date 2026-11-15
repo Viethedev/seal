@@ -3,3 +3,5 @@ Converts NASA's LOLA south-pole DEM (LDEM_80S_80MPP_ADJ.TIF, from https://pgda.g
 
 Setup: pip install rasterio numpy
 Run:   python export_terrain.py data\LDEM_80S_80MPP_ADJ.TIF out
+
+AI use: Claude helped write the python exporter
